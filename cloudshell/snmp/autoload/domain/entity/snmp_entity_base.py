@@ -17,7 +17,7 @@ class BaseEntity(object):
     def __init__(self, snmp_service, snmp_position_response):
         self.snmp_service = snmp_service
         self.index = snmp_position_response.index
-        self._position_id = snmp_position_response.value
+        self._position_id = snmp_position_response.safe_value
         self._parent_id = None
         self._entity_class = None
         self._vendor_type = None
@@ -38,7 +38,7 @@ class BaseEntity(object):
             self._description = self.snmp_service.get_property(
                 ENTITY_DESCRIPTION.get_snmp_mib_oid(self.index)
             )
-        return self._description.value
+        return self._description.safe_value
 
     @property
     def name(self):
@@ -46,14 +46,14 @@ class BaseEntity(object):
             self._name = self.snmp_service.get_property(
                 ENTITY_NAME.get_snmp_mib_oid(self.index)
             )
-        return self._name.value
+        return self._name.safe_value
 
     @property
     def parent_id(self):
         if self._parent_id is None:
             self._parent_id = self.snmp_service.get_property(
                 ENTITY_PARENT_ID.get_snmp_mib_oid(self.index)
-            ).value
+            ).safe_value
         return self._parent_id
 
     @property
@@ -69,7 +69,7 @@ class BaseEntity(object):
                 ENTITY_VENDOR_TYPE.get_snmp_mib_oid(self.index)
             )
             if self._vendor_type:
-                self._vendor_type = self._vendor_type.value
+                self._vendor_type = self._vendor_type.safe_value
         return self._vendor_type
 
     @property
@@ -81,7 +81,7 @@ class BaseEntity(object):
                 )
                 or self.name
             )
-        return self._model.value
+        return self._model.safe_value
 
     @property
     def serial_number(self):
@@ -89,7 +89,7 @@ class BaseEntity(object):
             self._serial_number = (
                 self.snmp_service.get_property(
                     ENTITY_SERIAL.get_snmp_mib_oid(self.index)
-                ).value
+                ).safe_value
                 or ""
             )
         return self._serial_number
@@ -97,7 +97,7 @@ class BaseEntity(object):
     def _get_physical_class(self):
         entity_class = self.snmp_service.get_property(
             ENTITY_CLASS.get_snmp_mib_oid(self.index)
-        ).value.replace("'", "")
+        ).safe_value.replace("'", "")
         if not entity_class or entity_class == "''" or "other" in entity_class:
             if not self.vendor_type:
                 return None

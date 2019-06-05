@@ -50,7 +50,7 @@ class Module(BaseModuleEntity):
     def os_version(self):
         if self._os_version is None:
             self._os_version = self.base_entity.snmp_service.get_property(
-                ENTITY_OS_VERSION.get_snmp_mib_oid(self.base_entity.index)).value
+                ENTITY_OS_VERSION.get_snmp_mib_oid(self.base_entity.index)).safe_value
         return self._os_version
 
 
@@ -63,7 +63,7 @@ class PowerPort(BaseModuleEntity):
     def hw_version(self):
         if self._hw_version is None:
             self._hw_version = self.base_entity.snmp_service.get_property(
-                ENTITY_HW_VERSION.get_snmp_mib_oid(self.base_entity.index)).value
+                ENTITY_HW_VERSION.get_snmp_mib_oid(self.base_entity.index)).safe_value
         return self._hw_version
 
 
@@ -81,6 +81,6 @@ class Port(BaseModuleEntity):
                 for alias_mapping in alias_mapping_list:
                     if alias_mapping.mib_id == ENTITY_TO_IF_ID.mib_id \
                               and alias_mapping.index.startswith("{}.".format(self.index)):
-                        self._alias_mapping = alias_mapping.value.replace("IF-MIB::ifIndex.", "")
+                        self._alias_mapping = alias_mapping.safe_value.replace("IF-MIB::ifIndex.", "")
                         break
         return self._alias_mapping

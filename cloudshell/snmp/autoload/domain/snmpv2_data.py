@@ -28,7 +28,7 @@ class SnmpV2MibData(object):
 
     def get_system_description(self):
         if not self._sys_descr:
-            self._sys_descr = self._snmp_handler.get_property(snmpv_v2_constants.SYS_DESCR).value
+            self._sys_descr = self._snmp_handler.get_property(snmpv_v2_constants.SYS_DESCR).safe_value
         return self._sys_descr
 
     def get_system_object_id(self):

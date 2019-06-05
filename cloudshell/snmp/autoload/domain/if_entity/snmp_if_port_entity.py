@@ -27,8 +27,8 @@ class SnmpIfPort(SnmpIfEntity):
         if not self._if_type:
             self._if_type = "other"
             if_type = self._snmp.get_property(PORT_TYPE.get_snmp_mib_oid(self.if_index))
-            if if_type and if_type.value:
-                self._if_type = self.IF_TYPE_REPLACE_PATTERN.sub("'", if_type.value)
+            if if_type and if_type.safe_value:
+                self._if_type = self.IF_TYPE_REPLACE_PATTERN.sub("'", if_type.safe_value)
         return self._if_type
 
     @property
@@ -76,7 +76,7 @@ class SnmpIfPort(SnmpIfEntity):
 
         # ToDo rebuild this. Iterating through dictionary again and again looks bad, very bad.
         if self._port_attributes_snmp_tables.lldp_local_table:
-            if_name = self.if_name.value
+            if_name = self.if_name.safe_value
             if not if_name:
                 if_name = ""
             interface_name = if_name.lower()
@@ -100,7 +100,7 @@ class SnmpIfPort(SnmpIfEntity):
 
         index = "{}.{}".format(self.if_index, 1)
         auto_negotiation = self._snmp.get_property(PORT_AUTO_NEG.get_snmp_mib_oid(index))
-        if auto_negotiation.value and 'enabled' in auto_negotiation.value.lower():
+        if auto_negotiation.safe_value and 'enabled' in auto_negotiation.safe_value.lower():
             return 'True'
 
     def _get_duplex(self):

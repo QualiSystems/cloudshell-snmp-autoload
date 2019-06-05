@@ -6,8 +6,6 @@ import os
 
 from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.snmp_autoload_helper import log_autoload_details
-from cloudshell.snmp.autoload.service.port_mapper import PortMappingService
-from cloudshell.snmp.autoload.service.port_parent_validator import PortParentValidator
 from cloudshell.snmp.autoload.snmp_entity_table import SnmpEntityTable
 from cloudshell.snmp.autoload.snmp_general_info import SnmpGeneralInfo
 from cloudshell.snmp.autoload.snmp_if_table import SnmpIfTable
@@ -31,8 +29,6 @@ class GenericSNMPAutoload(object):
         self.resource_name = resource_config.name
         self.logger = logger
         self.elements = {}
-        self._port_mapping_service = None
-        self._port_parent_validator_service = None
         self._entity_table = None
         self._if_table = None
         self._validate_module_id_by_port_name = False
@@ -47,20 +43,10 @@ class GenericSNMPAutoload(object):
     @property
     def entity_table_service(self):
         if not self._entity_table:
-            self._entity_table = SnmpEntityTable(self.snmp_handler, self.logger)
+            self._entity_table = SnmpEntityTable(snmp_handler=self.snmp_handler,
+                                                 logger=self.logger,
+                                                 if_table=self.if_table_service)
         return self._entity_table
-
-    @property
-    def port_mapping_service(self):
-        if not self._port_mapping_service:
-            self._port_mapping_service = PortMappingService(self.if_table_service, self.logger)
-        return self._port_mapping_service
-
-    @property
-    def port_parent_validator_service(self):
-        if not self._port_parent_validator_service:
-            self._port_parent_validator_service = PortParentValidator(self.logger)
-        return self._port_parent_validator_service
 
     def load_mibs(self, path):
         """
@@ -221,23 +207,16 @@ class GenericSNMPAutoload(object):
 
         self.logger.info("Building Port Channels completed")
 
-    def _get_ports_attributes(self, entity_port, parent_element):
+    def _get_ports_attributes(self, port, parent_element):
         """Get resource details and attributes for every port in self.port_list
 
         :return:
         """
 
-        port = self.port_mapping_service.get_mapping(entity_port.entity)
-        if not port:
-            return
+        self.logger.info("Trying to load port {}:".format(port.if_entity.if_name))
 
-        if port.if_name == '':
-            return
-
-        self.logger.info("Trying to load port {}:".format(port.if_name))
-
-        port_object = self._resource_model.entities.Port(index=entity_port.id,
-                                                         name=port.if_name.value.replace("/", "-"))
+        port_object = self._resource_model.entities.Port(index=port.if_index,
+                                                         name=port.if_name.safe_value.replace("/", "-"))
 
         port_object.mac_address = port.if_mac
         port_object.l2_protocol_type = port.if_type.replace("'", "")
@@ -251,6 +230,4 @@ class GenericSNMPAutoload(object):
         port_object.auto_negotiation = port.auto_negotiation
         port_object.mac_address = port.if_mac
         parent_element.connect_port(port_object)
-        if self._validate_module_id_by_port_name:
-            self.port_parent_validator_service.validate_port_parent_ids(port_object)
         self.logger.info("Added {} Port".format(port.if_name))

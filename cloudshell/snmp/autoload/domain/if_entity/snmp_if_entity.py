@@ -15,13 +15,13 @@ class SnmpIfEntity(object):
     @property
     def if_name(self):
         if not self._if_name:
-            self._if_name = self._snmp.get_property(PORT_NAME.get_snmp_mib_oid(self.if_index)).value or ""
+            self._if_name = self._snmp.get_property(PORT_NAME.get_snmp_mib_oid(self.if_index)).safe_value or ""
         return self._if_name
 
     @property
     def if_port_description(self):
         if not self._if_alias:
-            self._if_alias = self._snmp.get_property(PORT_DESCRIPTION.get_snmp_mib_oid(self.if_index)).value or ""
+            self._if_alias = self._snmp.get_property(PORT_DESCRIPTION.get_snmp_mib_oid(self.if_index)).safe_value or ""
         return self._if_alias
 
     @property
@@ -45,7 +45,7 @@ class SnmpIfEntity(object):
         if self._port_attributes_snmp_tables.ip_v4_table:
             for key, value in self._port_attributes_snmp_tables.ip_v4_table.iteritems():
                 if_index = value.get("ipAdEntIfIndex")
-                if if_index and int(if_index.value) == self.if_index:
+                if if_index and int(if_index.safe_value) == self.if_index:
                     return key
 
     def _get_ipv6(self):
@@ -57,5 +57,5 @@ class SnmpIfEntity(object):
         if self._port_attributes_snmp_tables.ip_v6_table:
             for key, value in self._port_attributes_snmp_tables.ip_v6_table.iteritems():
                 if_index = value.get("ipv6IfIndex")
-                if if_index and int(if_index.value) == self.if_index:
+                if if_index and int(if_index.safe_value) == self.if_index:
                     return key

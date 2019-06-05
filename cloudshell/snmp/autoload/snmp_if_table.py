@@ -52,7 +52,7 @@ class SnmpIfTable(object):
     def _get_if_entities(self):
         for port in self._if_table:
             if any([exclude_port for exclude_port in self._port_exclude_list if
-                    exclude_port in port.value.lower()]):
+                    exclude_port in port.safe_value.lower()]):
                 continue
             else:
                 port_obj = self.IF_PORT(snmp_handler=self._snmp, logger=self._logger,
@@ -62,7 +62,7 @@ class SnmpIfTable(object):
 
     def _get_port_channels(self):
         for port in self._if_table:
-            if any([port_channel for port_channel in self.PORT_CHANNEL_NAME if port_channel in port.value.lower()]):
+            if any([port_channel for port_channel in self.PORT_CHANNEL_NAME if port_channel in port.safe_value.lower()]):
                 port_channel_obj = self.IF_PORT_CHANNEL(snmp_handler=self._snmp, logger=self._logger,
                                                         port_name_response=port,
                                                         port_attributes_snmp_tables=self.port_attributes_snmp_tables)
