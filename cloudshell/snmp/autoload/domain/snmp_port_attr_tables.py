@@ -13,7 +13,8 @@ class SnmpPortAttrTables(object):
         self._cdp_table = None
         self._duplex_table = None
         self._cisco_duplex_state_table = None
-        self._ip_v4_table = None
+        self._ip_v4_old_table = None
+        self._ip_mixed_table = None
         self._ip_v6_table = None
         self._port_channel_ports = None
 
@@ -62,17 +63,24 @@ class SnmpPortAttrTables(object):
         return self._cisco_duplex_state_table
 
     @property
-    def ip_v4_table(self):
-        if self._ip_v4_table is None:
-            self._ip_v4_table = self._snmp.get_table(SnmpMibOid('IP-MIB', 'ipAdEntIfIndex'))
+    def ip_v4_old_list(self):
+        if self._ip_v4_old_table is None:
+            self._ip_v4_old_table = self._snmp.walk(SnmpMibOid('IP-MIB', 'ipAdEntIfIndex'))
             self._logger.info('ipAdEntIfIndex table loaded')
-        return self._ip_v4_table
+        return self._ip_v4_old_table
 
     @property
-    def ip_v6_table(self):
+    def ip_mixed_list(self):
+        if self._ip_mixed_table is None:
+            self._ip_mixed_table = self._snmp.walk(SnmpMibOid('IP-MIB', 'ipAddressIfIndex'))
+            self._logger.info('ipAddressIfIndex table loaded')
+        return self._ip_mixed_table
+
+    @property
+    def ip_v6_list(self):
         if self._ip_v6_table is None:
-            self._ip_v6_table = self._snmp.get_table(SnmpMibOid('IPV6-MIB', 'ipv6IfIndex'))
-            self._logger.info('ipv6IfIndex34 table loaded')
+            self._ip_v6_table = self._snmp.walk(SnmpMibOid('IPV6-MIB', 'ipv6AddrType'))
+            self._logger.info('ipv6IfDescr table loaded')
         return self._ip_v6_table
 
     @property

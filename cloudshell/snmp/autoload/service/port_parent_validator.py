@@ -8,13 +8,15 @@ class PortParentValidator(object):
         self._logger = logger
 
     def validate_port_parent_ids(self, port):
-        self._logger.info("Start port {} parent modules id validation".format(port.if_entity.if_name))
+        name = port.if_entity.if_name \
+               or port.if_entity.if_descr_name
+        self._logger.debug("Start port {} parent modules id validation".format(name))
         parent_ids_list = self._get_port_parent_ids(port)
         parent_ids = "/".join(parent_ids_list)  # ["0", "11"]
-        if re.search(parent_ids, port.if_entity.if_name.safe_value, re.IGNORECASE):
+        if re.search(parent_ids, name, re.IGNORECASE):
             return
         else:
-            parent_ids_from_port_match = re.search(r"\d+(/\d+)*$", port.if_entity.if_name.safe_value, re.IGNORECASE)
+            parent_ids_from_port_match = re.search(r"\d+(/\d+)*$", name, re.IGNORECASE)
             if parent_ids_from_port_match:
                 parent_ids_from_port = parent_ids_from_port_match.group()  # ["0", "7", "0", "0"]
                 parent_ids_from_port_list = parent_ids_from_port.split("/")
@@ -22,10 +24,10 @@ class PortParentValidator(object):
                     parent_ids_from_port_list = parent_ids_from_port_list[:len(parent_ids_list)]  # ["0", "7"]
 
                     self._set_port_parent_ids(port, parent_ids_from_port_list)
-        self._logger.info("Completed port {} parent modules id validation".format(port.if_entity.if_name.safe_value))
+        self._logger.debug("Completed port {} parent modules id validation".format(name))
 
     def _set_port_parent_ids(self, port, port_parent_list):
-        self._logger.info("Updating port parent modules ids")
+        self._logger.debug("Updating port parent modules ids")
         resource_element = port.parent
         port_list = list(port_parent_list)
         port_list.reverse()
@@ -34,7 +36,7 @@ class PortParentValidator(object):
             resource_element = resource_element.parent
 
     def _get_port_parent_ids(self, port):
-        self._logger.info("Loading port parent modules ids")
+        self._logger.debug("Loading port parent modules ids")
         resource_element = port.parent
         response = []
         while resource_element:

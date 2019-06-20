@@ -1,6 +1,6 @@
 import re
 
-from cloudshell.snmp.autoload.constants.port_constants import PORT_NAME, PORT_DESCR_NAME
+from cloudshell.snmp.autoload.constants import port_constants
 from cloudshell.snmp.autoload.domain.if_entity.snmp_if_port_channel_entity import SnmpIfPortChannel
 from cloudshell.snmp.autoload.domain.if_entity.snmp_if_port_entity import SnmpIfPort
 from cloudshell.snmp.autoload.domain.snmp_port_attr_tables import SnmpPortAttrTables
@@ -75,13 +75,13 @@ class SnmpIfTable(object):
         """
 
         self._logger.info('Start loading MIB tables:')
-        self._if_table = self._snmp.walk(PORT_DESCR_NAME.get_snmp_mib_oid())
+        self._if_table = self._snmp.walk(port_constants.PORT_DESCR_NAME.get_snmp_mib_oid())
         if not self._if_table:
-            self._if_table = self._snmp.walk(PORT_NAME.get_snmp_mib_oid())
+            self._if_table = self._snmp.walk(port_constants.PORT_NAME.get_snmp_mib_oid())
+            if not self._if_table:
+                self._if_table = self._snmp.walk(port_constants.PORT_INDEX.get_snmp_mib_oid())
 
         self._logger.info('ifIndex table loaded')
-
-        self._logger.info('MIB Tables loaded successfully')
 
     def get_if_index_from_port_name(self, port_name, port_filter_pattern):
         if_table_re = None
@@ -89,10 +89,10 @@ class SnmpIfTable(object):
         if not port_if_match:
             port_if_re = self.PORT_NAME_SECONDARY_PATTERN.findall(port_name)
             if port_if_re:
-                if_table_re = port_if_re[-1]
+                if_table_re = "/".join(port_if_re)
         else:
             port_if_re = port_if_match.group()
-            if_table_re = "/".join(port_if_re)
+            if_table_re = port_if_re
         if if_table_re:
             for interface_id in self.if_ports:
                 interface = self.if_ports.get(interface_id)
@@ -100,6 +100,42 @@ class SnmpIfTable(object):
                     continue
                 if port_filter_pattern.search(str(interface.if_name)):
                     continue
-                if re.search(r"^\S*\D*{0}(/\D+|$)".format(if_table_re),
-                             str(interface.if_name), re.IGNORECASE):
+                if port_name == interface.if_name or port_name == interface.if_descr_name:
                     return interface
+                port_pattern = re.compile(r"^\S*\D*{0}(/\D+|$)".format(if_table_re), re.IGNORECASE)
+                if port_pattern.search(interface.if_name) \
+                        or port_pattern.search(interface.if_descr_name):
+                    return interface
+
+
+if __name__ == "__main__":
+    from cloudshell.core.logger.qs_logger import get_qs_logger
+    from cloudshell.snmp.snmp_parameters import SNMPV2Parameters
+    from cloudshell.snmp.cloudshell_snmp import Snmp
+
+    logger = get_qs_logger()
+    # ip = "192.168.105.8"
+    # ip = "192.168.73.66"
+    ip = "192.168.73.102"
+    # ip = "192.168.105.11"
+    # ip = "192.168.105.4"
+    # ip = "192.168.73.142"
+    # ip = "192.168.42.235"
+    comm = "public"
+    # comm = "private"
+    # comm = "Aa123456"
+    # comm = "Cisco"
+    snmp_params = SNMPV2Parameters(ip, comm)
+    logger.info("started")
+    snmp_handler = Snmp(logger=logger, snmp_parameters=snmp_params)
+
+    with snmp_handler.get_snmp_service() as snmp_service:
+        snmp_service.update_mib_file_sources("D:\\_Quali_Git\\cloudshell-networking-cisco\\cloudshell\\networking\\cisco\\mibs")
+        if_table = SnmpIfTable(logger=logger, snmp_handler=snmp_service)
+
+        for port_id, port in if_table.if_ports.iteritems():
+            print port.ipv4_address
+            print port.ipv6_address
+
+        print("done")
+

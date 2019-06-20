@@ -15,6 +15,10 @@ from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
 
 class Element(object):
     def __init__(self, entity):
+        """
+
+        :type entity: object
+        """
         self.entity = entity
         self.id = entity.position_id
         self.child_list = []
@@ -43,6 +47,7 @@ class SnmpEntityTable(object):
         self._if_table_service = if_table
         self._module_tree = dict()
         self._chassis_dict = dict()
+        self._port_dict = dict()
         self.port_exclude_pattern = None
         self.module_exclude_pattern = None
         self.power_port_exclude_pattern = None
@@ -50,7 +55,12 @@ class SnmpEntityTable(object):
         self._raw_physical_indexes = None
         self._port_mapping_service = None
         self._port_parent_validator_service = None
-        self._validate_module_id_by_port_name = validate_module_id_by_port_name
+        self.validate_module_id_by_port_name = validate_module_id_by_port_name
+
+    def set_module_exclude_pattern(self, pattern):
+        self.module_exclude_pattern = pattern
+        if isinstance(self.module_exclude_pattern, str):
+            self.module_exclude_pattern = re.compile(pattern, re.IGNORECASE)
 
     def set_port_exclude_pattern(self, pattern):
         self.port_exclude_pattern = pattern
@@ -77,11 +87,9 @@ class SnmpEntityTable(object):
 
     def _load_port(self, entity):
         port = self.port_mapping_service.get_mapping(entity)
-        if not port:
+        if not port or port.if_name in self._port_dict:
             return
 
-        if port.if_name == '':
-            return
         port_element = PortElement(entity, port)
         element = port_element
         while element not in self._chassis_dict:
@@ -94,13 +102,18 @@ class SnmpEntityTable(object):
                 element.add_parent(parent)
                 break
 
-            entity = self._raw_physical_indexes.get(entity.parent_id)
+            parent_id = entity.parent_id
+            entity = self._raw_physical_indexes.get(parent_id)
             if not entity:
-                continue
+                if not parent_id == "0":
+                    self._logger.debug("Failed to autoload entity with id {}".format(parent_id))
+                    return
             if "container" in entity.entity_class.lower():
                 element.id = entity.position_id
                 continue
             elif "module" in entity.entity_class.lower():
+                if self.module_exclude_pattern and self.module_exclude_pattern.search(entity.vendor_type):
+                    continue
                 parent = Element(self.ENTITY_MODULE(entity))
                 self._module_tree[entity.index] = parent
             elif entity.entity_class == "chassis":
@@ -113,8 +126,10 @@ class SnmpEntityTable(object):
                 continue
             element.add_parent(parent)
             element = parent
-        if self._validate_module_id_by_port_name:
+        self._validate_modules_structure(port_element)
+        if self.validate_module_id_by_port_name:
             self.port_parent_validator_service.validate_port_parent_ids(port_element)
+        self._port_dict[port_element.if_entity.if_name] = port_element
 
     def _load_power_port(self, entity):
         element = Element(entity)
@@ -125,6 +140,8 @@ class SnmpEntityTable(object):
                 break
 
             entity = self._raw_physical_indexes.get(entity.parent_id)
+            if not entity:
+                return
             if "container" in entity.entity_class.lower():
                 element.id = entity.position_id
                 continue
@@ -145,6 +162,7 @@ class SnmpEntityTable(object):
         """
 
         self._raw_physical_indexes = EntityQualiMibTable(self._snmp)
+
         index_list = self._raw_physical_indexes.raw_entity_indexes
         try:
             index_list.sort(key=lambda k: int(k), reverse=True)
@@ -157,12 +175,31 @@ class SnmpEntityTable(object):
                 if self.port_exclude_pattern:
                     invalid_port = self.port_exclude_pattern.search(
                         entity.name
-                    ) or self.port_exclude_pattern.search(entity.description)
+                    ) or self.port_exclude_pattern.search(
+                        entity.description
+                    )
                     if invalid_port:
                         continue
                 self._load_port(self.ENTITY_PORT(entity))
-            elif "powersupply" in entity.entity_class:
+            elif "powersupply" in entity.entity_class.lower():
                 self._load_power_port(self.ENTITY_POWER_PORT(entity))
+
+    def _validate_modules_structure(self, port):
+        port_parent_list = self._get_port_parent_modules_list(port)
+        if len(port_parent_list) > 2:
+            port_parent_list[1].child_list.append(port)
+
+    def _get_port_parent_modules_list(self, port):
+        """
+
+        :type port: PortElement
+        """
+        result = []
+        entity_element = port.parent
+        while entity_element and entity_element not in self._chassis_dict.values():
+            result.append(entity_element)
+            entity_element = entity_element.parent
+        return result
 
 
 if __name__ == "__main__":
@@ -174,7 +211,9 @@ if __name__ == "__main__":
     logger = get_qs_logger()
     # ip = "192.168.105.8"
     # ip = "192.168.73.66"
-    ip = "192.168.73.115"
+    ip = "192.168.73.91"
+    # ip = "192.168.73.8"
+    # ip = "192.168.73.80"
     # ip = "192.168.105.11"
     # ip = "192.168.105.4"
     # ip = "192.168.73.142"
@@ -188,6 +227,7 @@ if __name__ == "__main__":
     snmp_handler = Snmp(logger=logger, snmp_parameters=snmp_params)
 
     with snmp_handler.get_snmp_service() as snmp_service:
+        snmp_service.update_mib_file_sources("D:\\_Quali_Git\\cloudshell-networking-cisco\\cloudshell\\networking\\cisco\\mibs")
         snmp_service.load_mib_oids(
             ["CISCO-PRODUCTS-MIB", "CISCO-ENTITY-VENDORTYPE-OID-MIB"]
         )
@@ -197,8 +237,12 @@ if __name__ == "__main__":
                                        if_table=if_table,
                                        validate_module_id_by_port_name=True)
         entity_table.set_port_exclude_pattern(r'stack|engine|management|'
-                                              r'mgmt|voice|foreign|cpu|'
+                                              r'mgmt|voice|foreign|usb|cpu|'
                                               r'control\s*ethernet\s*port|'
                                               r'console\s*port')
+        entity_table.set_module_exclude_pattern(r"powershelf|cevsfp|cevxfr|"
+                                                r"cevxfp|cevContainer10GigBasePort|"
+                                                r"cevModulePseAsicPlim")
         tt = entity_table.chassis_structure_dict
+        print tt
         print("done")

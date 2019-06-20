@@ -1,6 +1,7 @@
 from cloudshell.snmp.autoload.core.snmp_oid_template import SnmpMibOidTemplate
 from cloudshell.snmp.core.domain.snmp_oid import SnmpMibOid
 
+PORT_INDEX = SnmpMibOidTemplate("IF-MIB", "ifIndex")
 PORT_DESCR_NAME = SnmpMibOidTemplate("IF-MIB", "ifDescr")
 PORT_NAME = SnmpMibOidTemplate("IF-MIB", "ifName")
 PORT_DESCRIPTION = SnmpMibOidTemplate("IF-MIB", "ifAlias")

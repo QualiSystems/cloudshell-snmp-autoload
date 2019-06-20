@@ -11,7 +11,7 @@ def log_autoload_details(logger, autoload_details):
     logger.debug("-------------------- </RESOURCES> ----------------------")
 
     logger.debug("-------------------- <ATTRIBUTES> ---------------------")
-    # for attribute in autoload_details.attributes:
-        # logger.debug("-- {0:15}, {1:60}, {2}".format(attribute.relative_address, attribute.attribute_name,
-        #                                              attribute.attribute_value))
+    for attribute in autoload_details.attributes:
+        logger.debug("-- {0:15}, {1:60}, {2}".format(attribute.relative_address, attribute.attribute_name,
+                                                     attribute.attribute_value))
     logger.debug("-------------------- </ATTRIBUTES> ---------------------")

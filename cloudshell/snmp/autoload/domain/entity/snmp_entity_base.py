@@ -46,7 +46,7 @@ class BaseEntity(object):
             self._name = self.snmp_service.get_property(
                 ENTITY_NAME.get_snmp_mib_oid(self.index)
             )
-        return self._name.safe_value
+        return self._name.safe_value or ""
 
     @property
     def parent_id(self):
@@ -97,13 +97,14 @@ class BaseEntity(object):
     def _get_physical_class(self):
         entity_class = self.snmp_service.get_property(
             ENTITY_CLASS.get_snmp_mib_oid(self.index)
-        ).safe_value.replace("'", "")
+        ).safe_value
         if not entity_class or entity_class == "''" or "other" in entity_class:
             if not self.vendor_type:
-                return None
+                return ""
+            entity_class = entity_class.replace("'", "")
             for key, value in ENTITY_VENDOR_TYPE_TO_CLASS_MAP.iteritems():
                 if key.search(self.vendor_type.lower()):
                     entity_class = value
         if ENTITY_TO_CONTAINER_PATTERN.search(self.vendor_type):
             entity_class = "container"
-        return entity_class
+        return entity_class.replace("'", "")

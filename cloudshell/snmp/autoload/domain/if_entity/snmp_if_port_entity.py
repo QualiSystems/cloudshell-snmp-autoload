@@ -28,7 +28,7 @@ class SnmpIfPort(SnmpIfEntity):
             self._if_type = "other"
             if_type = self._snmp.get_property(PORT_TYPE.get_snmp_mib_oid(self.if_index))
             if if_type and if_type.safe_value:
-                self._if_type = self.IF_TYPE_REPLACE_PATTERN.sub("'", if_type.safe_value)
+                self._if_type = if_type.safe_value.replace("'", "")
         return self._if_type
 
     @property
@@ -76,7 +76,7 @@ class SnmpIfPort(SnmpIfEntity):
 
         # ToDo rebuild this. Iterating through dictionary again and again looks bad, very bad.
         if self._port_attributes_snmp_tables.lldp_local_table:
-            if_name = self.if_name.safe_value
+            if_name = self.if_name
             if not if_name:
                 if_name = ""
             interface_name = if_name.lower()
