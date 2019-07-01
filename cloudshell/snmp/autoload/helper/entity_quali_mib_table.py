@@ -11,7 +11,7 @@ class EntityQualiMibTable(object):
     @property
     def raw_entity_indexes(self):
         if not self._raw_entity_indexes:
-            self._raw_entity_indexes = self.raw_entity_position_table.keys()
+            self._raw_entity_indexes = list(self.raw_entity_position_table.keys())
         return self._raw_entity_indexes
 
     @property

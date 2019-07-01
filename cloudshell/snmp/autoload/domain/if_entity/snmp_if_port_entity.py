@@ -83,7 +83,7 @@ class SnmpIfPort(SnmpIfEntity):
             if interface_name:
                 key = self._port_attributes_snmp_tables.lldp_local_table.get(interface_name, None)
                 if key:
-                    for port_id, rem_table in self._port_attributes_snmp_tables.lldp_remote_table.iteritems():
+                    for port_id, rem_table in self._port_attributes_snmp_tables.lldp_remote_table.items():
                         if key in port_id.split("."):
                             remote_sys_name = rem_table.get('lldpRemSysName')
                             remote_port_name = self._snmp.get_property(
@@ -109,7 +109,7 @@ class SnmpIfPort(SnmpIfEntity):
         :return str "Full"
         """
 
-        for key, value in self._port_attributes_snmp_tables.duplex_table.iteritems():
+        for key, value in self._port_attributes_snmp_tables.duplex_table.items():
             if 'dot3StatsIndex' in value.keys() and value['dot3StatsIndex'] == str(self.if_index):
                 interface_duplex = self._snmp.get_property('EtherLike-MIB', 'dot3StatsDuplexStatus', key)
                 if 'fullDuplex' in interface_duplex:
