@@ -31,7 +31,7 @@ class SnmpPortAttrTables(object):
             lldp_local_table = self._snmp.get_table(PORT_ADJACENT_LOC_TABLE)
             if lldp_local_table:
                 self._lldp_local_table = dict(
-                    [(str(v.get("lldpLocPortDesc", "")).lower(), k) for k, v in lldp_local_table.iteritems()])
+                    [(str(v.get("lldpLocPortDesc", "")).lower(), k) for k, v in lldp_local_table.items()])
             else:
                 self._lldp_local_table = defaultdict()
             self._logger.info('lldpLocPortDesc table loaded')
