@@ -21,6 +21,10 @@ class SnmpIfEntity(object):
         self._ips_list = None
 
     @property
+    def port_name(self):
+        return self.if_name or self.if_descr_name
+
+    @property
     def if_name(self):
         if not self._if_name:
             self._if_name = self._snmp.get_property(PORT_NAME.get_snmp_mib_oid(self.if_index)).safe_value

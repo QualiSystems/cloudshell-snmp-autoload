@@ -8,8 +8,7 @@ class PortParentValidator(object):
         self._logger = logger
 
     def validate_port_parent_ids(self, port):
-        name = port.if_entity.if_name \
-               or port.if_entity.if_descr_name
+        name = port.port_name
         self._logger.debug("Start port {} parent modules id validation".format(name))
         parent_ids_list = self._get_port_parent_ids(port)
         parent_ids = "/".join(parent_ids_list)  # ["0", "11"]

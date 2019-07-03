@@ -172,8 +172,7 @@ class GenericSNMPAutoload(object):
     def _get_port_channels(self, parent_resource):
         """Get all port channels and set attributes for them
 
-        :type parent_resource: cloudshell.shell_standards.autoload_generic_models.GenericResourceModel
-        :type if_table: List<SnmpResponse>
+        :type parent_resource: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel
         :return:
         """
 
@@ -211,17 +210,13 @@ class GenericSNMPAutoload(object):
         :return:
         """
 
-        name = port.if_entity.if_name \
-               or port.if_entity.if_descr_name \
-               or port.entity.base_entity.name \
-               or port.entity.base_entity.description
-        if not name:
+        if not port.port_name:
             return
 
-        self.logger.info("Trying to load port {}:".format(name))
+        self.logger.info("Trying to load port {}:".format(port.if_entity.port_name))
 
         port_object = self._resource_model.entities.Port(index=port.if_entity.if_index,
-                                                         name=name.replace("/", "-"))
+                                                         name=port.port_name.replace("/", "-"))
 
         port_object.mac_address = port.if_entity.if_mac
         port_object.l2_protocol_type = port.if_entity.if_type.replace("'", "")
@@ -235,4 +230,4 @@ class GenericSNMPAutoload(object):
         port_object.auto_negotiation = port.if_entity.auto_negotiation
         port_object.mac_address = port.if_entity.if_mac
         parent_element.connect_port(port_object)
-        self.logger.info("Added {} Port".format(port.if_entity.if_name))
+        self.logger.info("Added {} Port".format(port.port_name))
