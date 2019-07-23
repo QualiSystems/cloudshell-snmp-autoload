@@ -108,34 +108,34 @@ class SnmpIfTable(object):
                     return interface
 
 
-if __name__ == "__main__":
-    from cloudshell.core.logger.qs_logger import get_qs_logger
-    from cloudshell.snmp.snmp_parameters import SNMPV2Parameters
-    from cloudshell.snmp.cloudshell_snmp import Snmp
-
-    logger = get_qs_logger()
-    # ip = "192.168.105.8"
-    # ip = "192.168.73.66"
-    ip = "192.168.73.102"
-    # ip = "192.168.105.11"
-    # ip = "192.168.105.4"
-    # ip = "192.168.73.142"
-    # ip = "192.168.42.235"
-    comm = "public"
-    # comm = "private"
-    # comm = "Aa123456"
-    # comm = "Cisco"
-    snmp_params = SNMPV2Parameters(ip, comm)
-    logger.info("started")
-    snmp_handler = Snmp(logger=logger, snmp_parameters=snmp_params)
-
-    with snmp_handler.get_snmp_service() as snmp_service:
-        snmp_service.update_mib_file_sources("D:\\_Quali_Git\\cloudshell-networking-cisco\\cloudshell\\networking\\cisco\\mibs")
-        if_table = SnmpIfTable(logger=logger, snmp_handler=snmp_service)
-
-        for port_id, port in if_table.if_ports.iteritems():
-            print port.ipv4_address
-            print port.ipv6_address
-
-        print("done")
+# if __name__ == "__main__":
+#     from cloudshell.core.logger.qs_logger import get_qs_logger
+#     from cloudshell.snmp.snmp_parameters import SNMPV2Parameters
+#     from cloudshell.snmp.cloudshell_snmp import Snmp
+#
+#     logger = get_qs_logger()
+#     # ip = "192.168.105.8"
+#     # ip = "192.168.73.66"
+#     ip = "192.168.73.102"
+#     # ip = "192.168.105.11"
+#     # ip = "192.168.105.4"
+#     # ip = "192.168.73.142"
+#     # ip = "192.168.42.235"
+#     comm = "public"
+#     # comm = "private"
+#     # comm = "Aa123456"
+#     # comm = "Cisco"
+#     snmp_params = SNMPV2Parameters(ip, comm)
+#     logger.info("started")
+#     snmp_handler = Snmp(logger=logger, snmp_parameters=snmp_params)
+#
+#     with snmp_handler.get_snmp_service() as snmp_service:
+#         snmp_service.update_mib_file_sources("D:\\_Quali_Git\\cloudshell-networking-cisco\\cloudshell\\networking\\cisco\\mibs")
+#         if_table = SnmpIfTable(logger=logger, snmp_handler=snmp_service)
+#
+#         for port_id, port in if_table.if_ports.iteritems():
+#             print port.ipv4_address
+#             print port.ipv6_address
+#
+#         print("done")
 

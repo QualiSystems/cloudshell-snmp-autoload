@@ -1,4 +1,4 @@
-from cloudshell.snmp.core.domain.snmp_oid import SnmpMibOid
+from cloudshell.snmp.core.domain.snmp_oid import SnmpMibObject
 
 
 class SnmpMibOidTemplate(object):
@@ -7,4 +7,4 @@ class SnmpMibOidTemplate(object):
         self.mib_id = mib_id
 
     def get_snmp_mib_oid(self, index=None):
-        return SnmpMibOid(self.mib_name, self.mib_id, index)
+        return SnmpMibObject(self.mib_name, self.mib_id, index)
