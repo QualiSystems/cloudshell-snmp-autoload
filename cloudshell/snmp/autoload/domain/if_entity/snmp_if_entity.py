@@ -77,22 +77,21 @@ class SnmpIfEntity(object):
             if index.startswith("ipv6"):
                 try:
                     ipv6 = IPv6Address((index.replace("ipv6.0x", "")).decode("hex"))
-                except:
+                except Exception:
                     ipv6 = ""
                 self._ipv6 = ipv6
             elif index.startswith("ipv4"):
                 try:
                     ipv4 = IPv4Address((index.replace("ipv4.0x", "")).decode("hex"))
-                except:
+                except Exception:
                     ipv4 = ""
                 self._ipv4 = ipv4
 
     def _get_ipv4(self):
-        """Get IPv4 address details for provided port
+        """Get IPv4 address details for provided port.
 
         :return str IPv4 Address
         """
-
         if self._port_attributes_snmp_tables.ip_v4_old_list:
             for snmp_response in self._port_attributes_snmp_tables.ip_v4_old_list:
                 if (
@@ -102,11 +101,10 @@ class SnmpIfEntity(object):
                     return snmp_response.index
 
     def _get_ipv6(self):
-        """Get IPv6 address details for provided port
+        """Get IPv6 address details for provided port.
 
         :return str IPv6 Address
         """
-
         if self._port_attributes_snmp_tables.ip_v6_list:
             for snmp_response in self._port_attributes_snmp_tables.ip_v6_list:
                 if snmp_response.safe_value and snmp_response.index.startswith(

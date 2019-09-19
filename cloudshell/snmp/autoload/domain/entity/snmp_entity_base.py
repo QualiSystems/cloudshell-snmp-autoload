@@ -1,5 +1,3 @@
-import re
-
 from cloudshell.snmp.autoload.constants.entity_constants import (
     ENTITY_CLASS,
     ENTITY_DESCRIPTION,

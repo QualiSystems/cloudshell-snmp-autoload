@@ -17,8 +17,9 @@ class PortParentValidator(object):
         else:
             parent_ids_from_port_match = re.search(r"\d+(/\d+)*$", name, re.IGNORECASE)
             if parent_ids_from_port_match:
-                # ["0", "7", "0", "0"]
-                parent_ids_from_port = parent_ids_from_port_match.group()
+                parent_ids_from_port = (
+                    parent_ids_from_port_match.group()
+                )  # ["0", "7", "0", "0"]
                 parent_ids_from_port_list = parent_ids_from_port.split("/")
                 if len(parent_ids_from_port_list) > len(parent_ids_list):  # > 1:
                     parent_ids_from_port_list = parent_ids_from_port_list[

@@ -1,5 +1,3 @@
-import re
-
 from cloudshell.snmp.autoload.constants.entity_constants import (
     ENTITY_HW_VERSION,
     ENTITY_OS_VERSION,
@@ -9,9 +7,9 @@ from cloudshell.snmp.autoload.constants.entity_constants import (
 
 class BaseModuleEntity(object):
     def __init__(self, base_entity):
-        """
+        """Initialize Base Module Entity.
 
-        :type base_entity: cloudshell.snmp.autoload.domain.entity.snmp_entity_base.BaseEntity
+        :type base_entity: cloudshell.snmp.autoload.domain.entity.snmp_entity_base.BaseEntity  # noqa: E501
         """
         self.base_entity = base_entity
         self._position_id = base_entity.position_id
@@ -25,8 +23,8 @@ class BaseModuleEntity(object):
         return self._position_id
 
     @position_id.setter
-    def position_id(self, id):
-        self._position_id = id
+    def position_id(self, id_):
+        self._position_id = id_
 
     @property
     def index(self):

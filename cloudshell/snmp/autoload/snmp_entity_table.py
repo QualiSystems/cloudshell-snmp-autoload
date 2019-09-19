@@ -1,7 +1,5 @@
 import re
 
-from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
-
 from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.domain.entity.snmp_entity_struct import (
     Chassis,
@@ -16,7 +14,7 @@ from cloudshell.snmp.autoload.service.port_parent_validator import PortParentVal
 
 class Element(object):
     def __init__(self, entity):
-        """
+        """Initialize Element.
 
         :type entity: object
         """
@@ -48,9 +46,9 @@ class SnmpEntityTable(object):
         self._snmp = snmp_handler
         self._logger = logger
         self._if_table_service = if_table
-        self._module_tree = dict()
-        self._chassis_dict = dict()
-        self._port_dict = dict()
+        self._module_tree = {}
+        self._chassis_dict = {}
+        self._port_dict = {}
         self.port_exclude_pattern = None
         self.module_exclude_pattern = None
         self.power_port_exclude_pattern = None
@@ -164,18 +162,18 @@ class SnmpEntityTable(object):
                 continue
 
     def _get_entity_table(self):
-        """Read Entity-MIB and filter out device's structure and all it's elements, like ports, modules, chassis, etc.
+        """Read Entity-MIB and filter out device's structure and all it's elements.
 
+        Like ports, modules, chassis, etc.
         :rtype: QualiMibTable
         :return: structured and filtered EntityPhysical table.
         """
-
         self._raw_physical_indexes = EntityQualiMibTable(self._snmp)
 
         index_list = self._raw_physical_indexes.raw_entity_indexes
         try:
             index_list.sort(key=lambda k: int(k), reverse=True)
-        except ValueError as e:
+        except ValueError:
             self._logger.error("Failed to load snmp entity table!", exc_info=1)
             raise GeneralAutoloadError("Failed to load snmp entity table.")
         for key in index_list:
@@ -197,7 +195,7 @@ class SnmpEntityTable(object):
             port_parent_list[1].child_list.append(port)
 
     def _get_port_parent_modules_list(self, port):
-        """
+        """Get port parent modules list.
 
         :type port: PortElement
         """

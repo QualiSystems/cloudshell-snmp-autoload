@@ -23,10 +23,7 @@ class SnmpIfPortChannel(SnmpIfEntity):
         return self._port_channel_associated_port
 
     def _get_associated_ports(self):
-        """Get all ports associated with provided port channel
-        :return:
-        """
-
+        """Get all ports associated with provided port channel."""
         result = []
         for (
             key,

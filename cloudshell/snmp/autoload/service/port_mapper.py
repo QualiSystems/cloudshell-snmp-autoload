@@ -23,13 +23,13 @@ class PortMappingService(object):
 
     def _get_mapping(self, port_descr):
         """Get mapping from entPhysicalTable to ifTable.
-        Build mapping based on ent_alias_mapping_table if exists else build manually based on
-        entPhysicalDescr <-> ifDescr mapping.
+
+        Build mapping based on ent_alias_mapping_table if exists else build manually
+        based on entPhysicalDescr <-> ifDescr mapping.
 
         :return: simple mapping from entPhysicalTable index to ifTable index:
         |        {entPhysicalTable index: ifTable index, ...}
         """
-
         port_if_entity = self._if_table.get_if_index_from_port_name(
             port_descr, self.PORT_EXCLUDE_RE
         )

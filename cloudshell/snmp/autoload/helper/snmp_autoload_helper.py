@@ -1,6 +1,6 @@
 def log_autoload_details(logger, autoload_details):
-    """
-    Logging autoload details
+    """Logging autoload details.
+
     :param autoload_details:
     :return:
     """

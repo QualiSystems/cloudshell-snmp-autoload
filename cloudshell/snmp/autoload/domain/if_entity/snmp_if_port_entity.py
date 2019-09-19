@@ -84,13 +84,14 @@ class SnmpIfPort(SnmpIfEntity):
         return self._auto_neg
 
     def _get_adjacent(self):
-        """Get connected device interface and device name to the specified port id, using cdp or lldp protocols
+        """Get connected device interface and device name to the specified port id.
 
+        Using cdp or lldp protocols
         :return: device's name and port connected to port id
         :rtype string
         """
-
-        # ToDo rebuild this. Iterating through dictionary again and again looks bad, very bad.
+        # ToDo rebuild this. Iterating through dictionary again and again looks bad
+        # very bad.
         if self._port_attributes_snmp_tables.lldp_local_table:
             if_name = self.if_name
             if not if_name:
@@ -117,11 +118,10 @@ class SnmpIfPort(SnmpIfEntity):
                                 )
 
     def _get_auto_neg(self):
-        """Get port auto negotiation status
+        """Get port auto negotiation status.
 
         :return return "True"
         """
-
         index = "{}.{}".format(self.if_index, 1)
         auto_negotiation = self._snmp.get_property(
             PORT_AUTO_NEG.get_snmp_mib_oid(index)
@@ -133,11 +133,10 @@ class SnmpIfPort(SnmpIfEntity):
             return "True"
 
     def _get_duplex(self):
-        """Get current duplex state
+        """Get current duplex state.
 
         :return str "Full"
         """
-
         for key, value in self._port_attributes_snmp_tables.duplex_table.items():
             if "dot3StatsIndex" in value.keys() and value["dot3StatsIndex"] == str(
                 self.if_index
