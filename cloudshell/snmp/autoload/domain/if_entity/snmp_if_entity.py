@@ -8,7 +8,9 @@ from cloudshell.snmp.autoload.constants.port_constants import (
 
 
 class SnmpIfEntity(object):
-    def __init__(self, snmp_handler, logger, port_name_response, port_attributes_snmp_tables):
+    def __init__(
+        self, snmp_handler, logger, port_name_response, port_attributes_snmp_tables
+    ):
         self.if_index = port_name_response.index
         self._snmp = snmp_handler
         self._port_attributes_snmp_tables = port_attributes_snmp_tables
@@ -27,19 +29,25 @@ class SnmpIfEntity(object):
     @property
     def if_name(self):
         if not self._if_name:
-            self._if_name = self._snmp.get_property(PORT_NAME.get_snmp_mib_oid(self.if_index)).safe_value
+            self._if_name = self._snmp.get_property(
+                PORT_NAME.get_snmp_mib_oid(self.if_index)
+            ).safe_value
         return self._if_name
 
     @property
     def if_descr_name(self):
         if not self._if_descr_name:
-            self._if_descr_name = self._snmp.get_property(PORT_DESCR_NAME.get_snmp_mib_oid(self.if_index)).safe_value
+            self._if_descr_name = self._snmp.get_property(
+                PORT_DESCR_NAME.get_snmp_mib_oid(self.if_index)
+            ).safe_value
         return self._if_descr_name
 
     @property
     def if_port_description(self):
         if not self._if_alias:
-            self._if_alias = self._snmp.get_property(PORT_DESCRIPTION.get_snmp_mib_oid(self.if_index)).safe_value
+            self._if_alias = self._snmp.get_property(
+                PORT_DESCRIPTION.get_snmp_mib_oid(self.if_index)
+            ).safe_value
         return self._if_alias
 
     @property
@@ -59,7 +67,11 @@ class SnmpIfEntity(object):
         return self._ipv6
 
     def _get_ip(self):
-        self._ips_list = [x for x in self._port_attributes_snmp_tables.ip_mixed_list if x.safe_value == self.if_index]
+        self._ips_list = [
+            x
+            for x in self._port_attributes_snmp_tables.ip_mixed_list
+            if x.safe_value == self.if_index
+        ]
         for ip in self._ips_list:
             index = ip.index.replace("'", "")
             if index.startswith("ipv6"):
@@ -83,7 +95,10 @@ class SnmpIfEntity(object):
 
         if self._port_attributes_snmp_tables.ip_v4_old_list:
             for snmp_response in self._port_attributes_snmp_tables.ip_v4_old_list:
-                if snmp_response.safe_value and snmp_response.safe_value == self.if_index:
+                if (
+                    snmp_response.safe_value
+                    and snmp_response.safe_value == self.if_index
+                ):
                     return snmp_response.index
 
     def _get_ipv6(self):
@@ -94,5 +109,7 @@ class SnmpIfEntity(object):
 
         if self._port_attributes_snmp_tables.ip_v6_list:
             for snmp_response in self._port_attributes_snmp_tables.ip_v6_list:
-                if snmp_response.safe_value and snmp_response.index.startswith("{}.".format(self.if_index)):
+                if snmp_response.safe_value and snmp_response.index.startswith(
+                    "{}.".format(self.if_index)
+                ):
                     return snmp_response.index.replace("{}.".format(self.if_index), "")

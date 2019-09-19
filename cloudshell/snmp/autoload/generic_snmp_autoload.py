@@ -34,16 +34,20 @@ class GenericSNMPAutoload(object):
     @property
     def if_table_service(self):
         if not self._if_table:
-            self._if_table = SnmpIfTable(snmp_handler=self.snmp_handler, logger=self.logger)
+            self._if_table = SnmpIfTable(
+                snmp_handler=self.snmp_handler, logger=self.logger
+            )
 
         return self._if_table
 
     @property
     def entity_table_service(self):
         if not self._entity_table:
-            self._entity_table = SnmpEntityTable(snmp_handler=self.snmp_handler,
-                                                 logger=self.logger,
-                                                 if_table=self.if_table_service)
+            self._entity_table = SnmpEntityTable(
+                snmp_handler=self.snmp_handler,
+                logger=self.logger,
+                if_table=self.if_table_service,
+            )
         return self._entity_table
 
     @property
@@ -60,10 +64,9 @@ class GenericSNMPAutoload(object):
         # path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mibs"))
         self.snmp_handler.update_mib_sources(path)
 
-    def discover(self,
-                 supported_os,
-                 resource_model,
-                 validate_module_id_by_port_name=False):
+    def discover(
+        self, supported_os, resource_model, validate_module_id_by_port_name=False
+    ):
         """General entry point for autoload,
         read device structure and attributes: chassis, modules, submodules, ports, port-channels and power supplies
 
@@ -72,12 +75,14 @@ class GenericSNMPAutoload(object):
         :return: AutoLoadDetails object
         """
 
-        self.entity_table_service.validate_module_id_by_port_name = validate_module_id_by_port_name
+        self.entity_table_service.validate_module_id_by_port_name = (
+            validate_module_id_by_port_name
+        )
         if not resource_model:
             return
         self._resource_model = resource_model
         if not self.system_info_service.is_valid_device_os(supported_os):
-            raise GeneralAutoloadError(self.__class__.__name__, 'Unsupported device OS')
+            raise GeneralAutoloadError(self.__class__.__name__, "Unsupported device OS")
         self.logger.info("*" * 70)
         self.logger.info("Start SNMP discovery process .....")
         self.system_info_service.fill_attributes(resource_model)
@@ -143,7 +148,9 @@ class GenericSNMPAutoload(object):
             module_object = self._resource_model.entities.Module(index=module.id)
             parent.connect_module(module_object)
         else:
-            self.logger.error("Failed to load the following element {}".format(parent.name))
+            self.logger.error(
+                "Failed to load the following element {}".format(parent.name)
+            )
             return
 
         module_object.model = module.entity.model
@@ -167,7 +174,9 @@ class GenericSNMPAutoload(object):
         power_port_object.version = power_port.entity.hardware_version
         power_port_object.serial_number = power_port.entity.serial_number
         parent_element.connect_power_port(power_port_object)
-        self.logger.info("Added " + power_port_object.model.strip(" \t\n\r") + " Power Port")
+        self.logger.info(
+            "Added " + power_port_object.model.strip(" \t\n\r") + " Power Port"
+        )
 
     def _get_port_channels(self, parent_resource):
         """Get all port channels and set attributes for them
@@ -187,12 +196,18 @@ class GenericSNMPAutoload(object):
                 interface_id = "{0}".format(match_object.group(0))
                 associated_ports = ""
                 for port in if_port_channel.associated_port_list:
-                    if_port_name = self.if_table_service.get_if_entity_by_index(port).if_name
-                    associated_ports = if_port_name.replace('/', '-').replace(' ', '') + '; '
+                    if_port_name = self.if_table_service.get_if_entity_by_index(
+                        port
+                    ).if_name
+                    associated_ports = (
+                        if_port_name.replace("/", "-").replace(" ", "") + "; "
+                    )
 
-                port_channel = self._resource_model.entities.PortChannel(index=interface_id)
+                port_channel = self._resource_model.entities.PortChannel(
+                    index=interface_id
+                )
 
-                port_channel.associated_ports = associated_ports.strip(' \t\n\r')
+                port_channel.associated_ports = associated_ports.strip(" \t\n\r")
                 port_channel.port_description = if_port_channel.if_port_description
                 port_channel.ipv4_address = if_port_channel.ipv4_address
                 port_channel.ipv6_address = if_port_channel.ipv6_address
@@ -201,7 +216,9 @@ class GenericSNMPAutoload(object):
                 self.logger.info("Added " + interface_model + " Port Channel")
 
             else:
-                self.logger.error("Adding of {0} failed. Name is invalid".format(interface_model))
+                self.logger.error(
+                    "Adding of {0} failed. Name is invalid".format(interface_model)
+                )
 
         self.logger.info("Building Port Channels completed")
 
@@ -211,17 +228,20 @@ class GenericSNMPAutoload(object):
         :return:
         """
 
-        name = port.if_entity.if_name \
-               or port.if_entity.if_descr_name \
-               or port.entity.base_entity.name \
-               or port.entity.base_entity.description
+        name = (
+            port.if_entity.if_name
+            or port.if_entity.if_descr_name
+            or port.entity.base_entity.name
+            or port.entity.base_entity.description
+        )
         if not name:
             return
 
         self.logger.info("Trying to load port {}:".format(name))
 
-        port_object = self._resource_model.entities.Port(index=port.if_entity.if_index,
-                                                         name=name.replace("/", "-"))
+        port_object = self._resource_model.entities.Port(
+            index=port.if_entity.if_index, name=name.replace("/", "-")
+        )
 
         port_object.mac_address = port.if_entity.if_mac
         port_object.l2_protocol_type = port.if_entity.if_type.replace("'", "")

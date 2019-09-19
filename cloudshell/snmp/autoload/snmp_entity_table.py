@@ -42,7 +42,9 @@ class SnmpEntityTable(object):
     ENTITY_MODULE = Module
     ENTITY_POWER_PORT = PowerPort
 
-    def __init__(self, snmp_handler, logger, if_table, validate_module_id_by_port_name=False):
+    def __init__(
+        self, snmp_handler, logger, if_table, validate_module_id_by_port_name=False
+    ):
         self._snmp = snmp_handler
         self._logger = logger
         self._if_table_service = if_table
@@ -71,7 +73,9 @@ class SnmpEntityTable(object):
     @property
     def port_mapping_service(self):
         if not self._port_mapping_service:
-            self._port_mapping_service = PortMappingService(self._if_table_service, self._logger)
+            self._port_mapping_service = PortMappingService(
+                self._if_table_service, self._logger
+            )
         return self._port_mapping_service
 
     @property
@@ -107,13 +111,17 @@ class SnmpEntityTable(object):
             entity = self._raw_physical_indexes.get(parent_id)
             if not entity:
                 if not parent_id == "0":
-                    self._logger.debug("Failed to autoload entity with id {}".format(parent_id))
+                    self._logger.debug(
+                        "Failed to autoload entity with id {}".format(parent_id)
+                    )
                     return
             if "container" in entity.entity_class.lower():
                 element.id = entity.position_id
                 continue
             elif "module" in entity.entity_class.lower():
-                if self.module_exclude_pattern and self.module_exclude_pattern.search(entity.vendor_type):
+                if self.module_exclude_pattern and self.module_exclude_pattern.search(
+                    entity.vendor_type
+                ):
                     continue
                 parent = Element(self.ENTITY_MODULE(entity))
                 self._module_tree[entity.index] = parent
@@ -176,9 +184,7 @@ class SnmpEntityTable(object):
                 if self.port_exclude_pattern:
                     invalid_port = self.port_exclude_pattern.search(
                         entity.name
-                    ) or self.port_exclude_pattern.search(
-                        entity.description
-                    )
+                    ) or self.port_exclude_pattern.search(entity.description)
                     if invalid_port:
                         continue
                 self._load_port(self.ENTITY_PORT(entity))

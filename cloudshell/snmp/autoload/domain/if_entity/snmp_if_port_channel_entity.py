@@ -2,8 +2,17 @@ from cloudshell.snmp.autoload.domain.if_entity.snmp_if_entity import SnmpIfEntit
 
 
 class SnmpIfPortChannel(SnmpIfEntity):
-    def __init__(self, snmp_handler, logger, port_name_response, port_attributes_snmp_tables, name=None):
-        super(SnmpIfPortChannel, self).__init__(snmp_handler, logger, port_name_response, port_attributes_snmp_tables)
+    def __init__(
+        self,
+        snmp_handler,
+        logger,
+        port_name_response,
+        port_attributes_snmp_tables,
+        name=None,
+    ):
+        super(SnmpIfPortChannel, self).__init__(
+            snmp_handler, logger, port_name_response, port_attributes_snmp_tables
+        )
         self._port_channel_associated_port = ""
         self._if_name = name
 
@@ -19,7 +28,10 @@ class SnmpIfPortChannel(SnmpIfEntity):
         """
 
         result = []
-        for key, value in self._port_attributes_snmp_tables.port_channel_ports.iteritems():
-            if str(self.if_index) in value['dot3adAggPortAttachedAggID']:
+        for (
+            key,
+            value,
+        ) in self._port_attributes_snmp_tables.port_channel_ports.iteritems():
+            if str(self.if_index) in value["dot3adAggPortAttachedAggID"]:
                 result.append(key)
         return result

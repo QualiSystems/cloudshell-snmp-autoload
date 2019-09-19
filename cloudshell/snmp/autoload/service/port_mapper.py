@@ -2,8 +2,11 @@ import re
 
 
 class PortMappingService(object):
-    PORT_EXCLUDE_RE = re.compile(r'stack|engine|management|mgmt|null|voice|foreign|'
-                                 r'cpu|control\s*ethernet\s*port|console\s*port', re.IGNORECASE)
+    PORT_EXCLUDE_RE = re.compile(
+        r"stack|engine|management|mgmt|null|voice|foreign|"
+        r"cpu|control\s*ethernet\s*port|console\s*port",
+        re.IGNORECASE,
+    )
 
     def __init__(self, if_table, logger):
         self._if_table = if_table
@@ -27,5 +30,7 @@ class PortMappingService(object):
         |        {entPhysicalTable index: ifTable index, ...}
         """
 
-        port_if_entity = self._if_table.get_if_index_from_port_name(port_descr, self.PORT_EXCLUDE_RE)
+        port_if_entity = self._if_table.get_if_index_from_port_name(
+            port_descr, self.PORT_EXCLUDE_RE
+        )
         return port_if_entity

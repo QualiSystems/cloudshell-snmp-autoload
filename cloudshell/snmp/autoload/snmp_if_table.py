@@ -15,7 +15,9 @@ class SnmpIfTable(object):
     PORT_EXCLUDE_LIST = ["mgmt", "management", "loopback", "null", "."]
     PORT_NAME_PATTERN = re.compile(r"((\d+/).+)")
     PORT_NAME_SECONDARY_PATTERN = re.compile(r"\d+")
-    PORT_VALID_TYPE = re.compile(r"ethernet|other|propPointToPointSerial|fastEther|^otn", re.IGNORECASE)
+    PORT_VALID_TYPE = re.compile(
+        r"ethernet|other|propPointToPointSerial|fastEther|^otn", re.IGNORECASE
+    )
 
     def __init__(self, snmp_handler, logger):
         self._snmp = snmp_handler
@@ -53,21 +55,38 @@ class SnmpIfTable(object):
 
     def _get_if_entities(self):
         for port in self._if_table:
-            if any([exclude_port for exclude_port in self._port_exclude_list if
-                    exclude_port in port.safe_value.lower()]):
+            if any(
+                [
+                    exclude_port
+                    for exclude_port in self._port_exclude_list
+                    if exclude_port in port.safe_value.lower()
+                ]
+            ):
                 continue
             else:
-                port_obj = self.IF_PORT(snmp_handler=self._snmp, logger=self._logger,
-                                        port_name_response=port,
-                                        port_attributes_snmp_tables=self.port_attributes_snmp_tables)
+                port_obj = self.IF_PORT(
+                    snmp_handler=self._snmp,
+                    logger=self._logger,
+                    port_name_response=port,
+                    port_attributes_snmp_tables=self.port_attributes_snmp_tables,
+                )
                 self._if_port_dict[port.index] = port_obj
 
     def _get_port_channels(self):
         for port in self._if_table:
-            if any([port_channel for port_channel in self.PORT_CHANNEL_NAME if port_channel in port.safe_value.lower()]):
-                port_channel_obj = self.IF_PORT_CHANNEL(snmp_handler=self._snmp, logger=self._logger,
-                                                        port_name_response=port,
-                                                        port_attributes_snmp_tables=self.port_attributes_snmp_tables)
+            if any(
+                [
+                    port_channel
+                    for port_channel in self.PORT_CHANNEL_NAME
+                    if port_channel in port.safe_value.lower()
+                ]
+            ):
+                port_channel_obj = self.IF_PORT_CHANNEL(
+                    snmp_handler=self._snmp,
+                    logger=self._logger,
+                    port_name_response=port,
+                    port_attributes_snmp_tables=self.port_attributes_snmp_tables,
+                )
                 self._if_port_channels_dict[port.index] = port_channel_obj
 
     def _load_snmp_tables(self):
@@ -76,14 +95,20 @@ class SnmpIfTable(object):
         :return:
         """
 
-        self._logger.info('Start loading MIB tables:')
-        self._if_table = self._snmp.walk(port_constants.PORT_DESCR_NAME.get_snmp_mib_oid())
+        self._logger.info("Start loading MIB tables:")
+        self._if_table = self._snmp.walk(
+            port_constants.PORT_DESCR_NAME.get_snmp_mib_oid()
+        )
         if not self._if_table:
-            self._if_table = self._snmp.walk(port_constants.PORT_NAME.get_snmp_mib_oid())
+            self._if_table = self._snmp.walk(
+                port_constants.PORT_NAME.get_snmp_mib_oid()
+            )
             if not self._if_table:
-                self._if_table = self._snmp.walk(port_constants.PORT_INDEX.get_snmp_mib_oid())
+                self._if_table = self._snmp.walk(
+                    port_constants.PORT_INDEX.get_snmp_mib_oid()
+                )
 
-        self._logger.info('ifIndex table loaded')
+        self._logger.info("ifIndex table loaded")
 
     def get_if_index_from_port_name(self, port_name, port_filter_pattern):
         if_table_re = None
@@ -102,11 +127,17 @@ class SnmpIfTable(object):
                     continue
                 if port_filter_pattern.search(str(interface.if_name)):
                     continue
-                if port_name == interface.if_name or port_name == interface.if_descr_name:
+                if (
+                    port_name == interface.if_name
+                    or port_name == interface.if_descr_name
+                ):
                     return interface
-                port_pattern = re.compile(r"^\S*\D*{0}(/\D+|$)".format(if_table_re), re.IGNORECASE)
-                if port_pattern.search(interface.if_name) \
-                        or port_pattern.search(interface.if_descr_name):
+                port_pattern = re.compile(
+                    r"^\S*\D*{0}(/\D+|$)".format(if_table_re), re.IGNORECASE
+                )
+                if port_pattern.search(interface.if_name) or port_pattern.search(
+                    interface.if_descr_name
+                ):
                     return interface
 
 
