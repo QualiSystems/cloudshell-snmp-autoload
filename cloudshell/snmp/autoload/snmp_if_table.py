@@ -1,7 +1,9 @@
 import re
 
 from cloudshell.snmp.autoload.constants import port_constants
-from cloudshell.snmp.autoload.domain.if_entity.snmp_if_port_channel_entity import SnmpIfPortChannel
+from cloudshell.snmp.autoload.domain.if_entity.snmp_if_port_channel_entity import (
+    SnmpIfPortChannel,
+)
 from cloudshell.snmp.autoload.domain.if_entity.snmp_if_port_entity import SnmpIfPort
 from cloudshell.snmp.autoload.domain.snmp_port_attr_tables import SnmpPortAttrTables
 
@@ -138,4 +140,3 @@ class SnmpIfTable(object):
 #             print port.ipv6_address
 #
 #         print("done")
-

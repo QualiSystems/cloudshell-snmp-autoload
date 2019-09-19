@@ -35,4 +35,3 @@ class SnmpV2MibData(object):
         if not self._sys_object_id:
             self._sys_object_id = self._snmp_handler.get_property(snmpv_v2_constants.SYS_DESCR)
         return self._sys_object_id
-

@@ -1,6 +1,10 @@
 from ipaddress import IPv4Address, IPv6Address
 
-from cloudshell.snmp.autoload.constants.port_constants import PORT_NAME, PORT_DESCRIPTION, PORT_DESCR_NAME
+from cloudshell.snmp.autoload.constants.port_constants import (
+    PORT_DESCR_NAME,
+    PORT_DESCRIPTION,
+    PORT_NAME,
+)
 
 
 class SnmpIfEntity(object):

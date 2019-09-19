@@ -1,7 +1,13 @@
 import re
 
-from cloudshell.snmp.autoload.constants.port_constants import PORT_TYPE, PORT_SPEED, PORT_MTU, PORT_MAC, PORT_AUTO_NEG, \
-    PORT_ADJACENT_REM_PORT_DESCR
+from cloudshell.snmp.autoload.constants.port_constants import (
+    PORT_ADJACENT_REM_PORT_DESCR,
+    PORT_AUTO_NEG,
+    PORT_MAC,
+    PORT_MTU,
+    PORT_SPEED,
+    PORT_TYPE,
+)
 from cloudshell.snmp.autoload.domain.if_entity.snmp_if_entity import SnmpIfEntity
 
 

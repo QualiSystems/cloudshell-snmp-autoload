@@ -3,7 +3,6 @@ from collections import OrderedDict
 
 from cloudshell.snmp.autoload.core.snmp_oid_template import SnmpMibOidTemplate
 
-
 ENTITY_VALID_CLASS_PATTERN = re.compile(r'stack|chassis|module|port|powerSupply|container|backplane')
 
 ENTITY_POSITION = SnmpMibOidTemplate("ENTITY-MIB", "entPhysicalParentRelPos")
@@ -27,4 +26,3 @@ ENTITY_VENDOR_TYPE_TO_CLASS_MAP = OrderedDict([(re.compile("^\S+container"), "co
 
 ENTITY_TO_CONTAINER_PATTERN = re.compile("powershelf|^\S+sfp|^\S+xfr|^\S+xfp|"
                                       "^\S+Container10GigBasePort|^\S+ModulePseAsicPlim")
-

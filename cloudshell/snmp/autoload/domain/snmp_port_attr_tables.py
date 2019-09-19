@@ -1,7 +1,11 @@
 from collections import defaultdict
 
-from cloudshell.snmp.autoload.constants.port_constants import PORT_ADJACENT_LOC_TABLE, PORT_ADJACENT_REM_TABLE
 from cloudshell.snmp.core.domain.snmp_oid import SnmpMibObject
+
+from cloudshell.snmp.autoload.constants.port_constants import (
+    PORT_ADJACENT_LOC_TABLE,
+    PORT_ADJACENT_REM_TABLE,
+)
 
 
 class SnmpPortAttrTables(object):

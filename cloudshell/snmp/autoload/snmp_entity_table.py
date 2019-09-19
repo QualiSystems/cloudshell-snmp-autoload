@@ -1,16 +1,17 @@
 import re
 
+from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
+
 from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.domain.entity.snmp_entity_struct import (
     Chassis,
+    Module,
     Port,
     PowerPort,
-    Module,
 )
 from cloudshell.snmp.autoload.helper.entity_quali_mib_table import EntityQualiMibTable
 from cloudshell.snmp.autoload.service.port_mapper import PortMappingService
 from cloudshell.snmp.autoload.service.port_parent_validator import PortParentValidator
-from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
 
 
 class Element(object):

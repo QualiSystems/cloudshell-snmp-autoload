@@ -1,5 +1,6 @@
-from setuptools import setup, find_packages
 import os
+
+from setuptools import find_packages, setup
 
 with open(os.path.join('version.txt')) as version_file:
     version_from_file = version_file.read().strip()
@@ -23,4 +24,3 @@ setup(
     description='QualiSystems SNMP Autoload Python package',
     include_package_data=True
 )
-

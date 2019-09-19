@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import re
 import os
+import re
 
 from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.snmp_autoload_helper import log_autoload_details
 from cloudshell.snmp.autoload.snmp_entity_table import SnmpEntityTable
-from cloudshell.snmp.autoload.snmp_system_info import SnmpSystemInfo
 from cloudshell.snmp.autoload.snmp_if_table import SnmpIfTable
+from cloudshell.snmp.autoload.snmp_system_info import SnmpSystemInfo
 
 
 class GenericSNMPAutoload(object):

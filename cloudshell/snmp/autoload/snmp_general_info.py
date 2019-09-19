@@ -97,4 +97,3 @@ class SnmpGeneralInfo(object):
         resource.model_name = resource.model
 
         self._logger.info("Building Root completed")
-

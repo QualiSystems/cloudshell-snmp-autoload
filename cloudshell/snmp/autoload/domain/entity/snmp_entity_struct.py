@@ -1,6 +1,10 @@
 import re
 
-from cloudshell.snmp.autoload.constants.entity_constants import ENTITY_OS_VERSION, ENTITY_HW_VERSION, ENTITY_TO_IF_ID
+from cloudshell.snmp.autoload.constants.entity_constants import (
+    ENTITY_HW_VERSION,
+    ENTITY_OS_VERSION,
+    ENTITY_TO_IF_ID,
+)
 
 
 class BaseModuleEntity(object):
