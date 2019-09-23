@@ -8,7 +8,7 @@ class PortParentValidator(object):
         self._logger = logger
 
     def validate_port_parent_ids(self, port):
-        name = port.port_name
+        name = port.if_entity.if_name or port.if_entity.if_descr_name
         self._logger.debug("Start port {} parent modules id validation".format(name))
         parent_ids_list = self._get_port_parent_ids(port)
         parent_ids = "/".join(parent_ids_list)  # ["0", "11"]
@@ -17,13 +17,19 @@ class PortParentValidator(object):
         else:
             parent_ids_from_port_match = re.search(r"\d+(/\d+)*$", name, re.IGNORECASE)
             if parent_ids_from_port_match:
-                parent_ids_from_port = parent_ids_from_port_match.group()  # ["0", "7", "0", "0"]
+                parent_ids_from_port = (
+                    parent_ids_from_port_match.group()
+                )  # ["0", "7", "0", "0"]
                 parent_ids_from_port_list = parent_ids_from_port.split("/")
                 if len(parent_ids_from_port_list) > len(parent_ids_list):  # > 1:
-                    parent_ids_from_port_list = parent_ids_from_port_list[:len(parent_ids_list)]  # ["0", "7"]
+                    parent_ids_from_port_list = parent_ids_from_port_list[
+                        : len(parent_ids_list)
+                    ]  # ["0", "7"]
 
                     self._set_port_parent_ids(port, parent_ids_from_port_list)
-        self._logger.debug("Completed port {} parent modules id validation".format(name))
+        self._logger.debug(
+            "Completed port {} parent modules id validation".format(name)
+        )
 
     def _set_port_parent_ids(self, port, port_parent_list):
         self._logger.debug("Updating port parent modules ids")

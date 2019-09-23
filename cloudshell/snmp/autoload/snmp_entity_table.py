@@ -3,19 +3,18 @@ import re
 from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.domain.entity.snmp_entity_struct import (
     Chassis,
+    Module,
     Port,
     PowerPort,
-    Module,
 )
 from cloudshell.snmp.autoload.helper.entity_quali_mib_table import EntityQualiMibTable
 from cloudshell.snmp.autoload.service.port_mapper import PortMappingService
 from cloudshell.snmp.autoload.service.port_parent_validator import PortParentValidator
-from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
 
 
 class Element(object):
     def __init__(self, entity):
-        """
+        """Initialize Element.
 
         :type entity: object
         """
@@ -36,9 +35,11 @@ class PortElement(Element):
 
     @property
     def port_name(self):
-        return self.if_entity.port_name \
-               or self.entity.base_entity.name \
-               or self.entity.base_entity.description
+        return (
+            self.if_entity.port_name
+            or self.entity.base_entity.name
+            or self.entity.base_entity.description
+        )
 
 
 class SnmpEntityTable(object):
@@ -47,13 +48,15 @@ class SnmpEntityTable(object):
     ENTITY_MODULE = Module
     ENTITY_POWER_PORT = PowerPort
 
-    def __init__(self, snmp_handler, logger, if_table, validate_module_id_by_port_name=False):
+    def __init__(
+        self, snmp_handler, logger, if_table, validate_module_id_by_port_name=False
+    ):
         self._snmp = snmp_handler
         self._logger = logger
         self._if_table_service = if_table
-        self._module_tree = dict()
-        self._chassis_dict = dict()
-        self._port_dict = dict()
+        self._module_tree = {}
+        self._chassis_dict = {}
+        self._port_dict = {}
         self.port_exclude_pattern = None
         self.module_exclude_pattern = None
         self.power_port_exclude_pattern = None
@@ -76,7 +79,9 @@ class SnmpEntityTable(object):
     @property
     def port_mapping_service(self):
         if not self._port_mapping_service:
-            self._port_mapping_service = PortMappingService(self._if_table_service, self._logger)
+            self._port_mapping_service = PortMappingService(
+                self._if_table_service, self._logger
+            )
         return self._port_mapping_service
 
     @property
@@ -112,13 +117,17 @@ class SnmpEntityTable(object):
             entity = self._raw_physical_indexes.get(parent_id)
             if not entity:
                 if not parent_id == "0":
-                    self._logger.debug("Failed to autoload entity with id {}".format(parent_id))
+                    self._logger.debug(
+                        "Failed to autoload entity with id {}".format(parent_id)
+                    )
                     return
             if "container" in entity.entity_class.lower():
                 element.id = entity.position_id
                 continue
             elif "module" in entity.entity_class.lower():
-                if self.module_exclude_pattern and self.module_exclude_pattern.search(entity.vendor_type):
+                if self.module_exclude_pattern and self.module_exclude_pattern.search(
+                    entity.vendor_type
+                ):
                     continue
                 parent = Element(self.ENTITY_MODULE(entity))
                 self._module_tree[entity.index] = parent
@@ -161,18 +170,18 @@ class SnmpEntityTable(object):
                 continue
 
     def _get_entity_table(self):
-        """Read Entity-MIB and filter out device's structure and all it's elements, like ports, modules, chassis, etc.
+        """Read Entity-MIB and filter out device's structure and all it's elements.
 
+        Like ports, modules, chassis, etc.
         :rtype: QualiMibTable
         :return: structured and filtered EntityPhysical table.
         """
-
         self._raw_physical_indexes = EntityQualiMibTable(self._snmp)
 
         index_list = self._raw_physical_indexes.raw_entity_indexes
         try:
             index_list.sort(key=lambda k: int(k), reverse=True)
-        except ValueError as e:
+        except ValueError:
             self._logger.error("Failed to load snmp entity table!", exc_info=1)
             raise GeneralAutoloadError("Failed to load snmp entity table.")
         for key in index_list:
@@ -181,9 +190,7 @@ class SnmpEntityTable(object):
                 if self.port_exclude_pattern:
                     invalid_port = self.port_exclude_pattern.search(
                         entity.name
-                    ) or self.port_exclude_pattern.search(
-                        entity.description
-                    )
+                    ) or self.port_exclude_pattern.search(entity.description)
                     if invalid_port:
                         continue
                 self._load_port(self.ENTITY_PORT(entity))
@@ -196,7 +203,7 @@ class SnmpEntityTable(object):
             port_parent_list[1].child_list.append(port)
 
     def _get_port_parent_modules_list(self, port):
-        """
+        """Get port parent modules list.
 
         :type port: PortElement
         """
@@ -206,4 +213,3 @@ class SnmpEntityTable(object):
             result.append(entity_element)
             entity_element = entity_element.parent
         return result
-

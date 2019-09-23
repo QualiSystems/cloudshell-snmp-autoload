@@ -2,26 +2,24 @@
 # -*- coding: utf-8 -*-
 
 import re
-import os
 
 from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.snmp_autoload_helper import log_autoload_details
 from cloudshell.snmp.autoload.snmp_entity_table import SnmpEntityTable
-from cloudshell.snmp.autoload.snmp_system_info import SnmpSystemInfo
 from cloudshell.snmp.autoload.snmp_if_table import SnmpIfTable
+from cloudshell.snmp.autoload.snmp_system_info import SnmpSystemInfo
 
 
 class GenericSNMPAutoload(object):
-    PORT_NAME_PATTERN = re.compile("\d+(/\d+)*", re.IGNORECASE)
+    PORT_NAME_PATTERN = re.compile(r"\d+(/\d+)*", re.IGNORECASE)
 
     def __init__(self, snmp_handler, logger):
-        """Basic init with snmp handler and logger
+        """Basic init with snmp handler and logger.
 
         :param snmp_handler:
         :param logger:
         :return:
         """
-
         self.snmp_handler = snmp_handler
         self._resource_model = None
         self.logger = logger
@@ -34,16 +32,20 @@ class GenericSNMPAutoload(object):
     @property
     def if_table_service(self):
         if not self._if_table:
-            self._if_table = SnmpIfTable(snmp_handler=self.snmp_handler, logger=self.logger)
+            self._if_table = SnmpIfTable(
+                snmp_handler=self.snmp_handler, logger=self.logger
+            )
 
         return self._if_table
 
     @property
     def entity_table_service(self):
         if not self._entity_table:
-            self._entity_table = SnmpEntityTable(snmp_handler=self.snmp_handler,
-                                                 logger=self.logger,
-                                                 if_table=self.if_table_service)
+            self._entity_table = SnmpEntityTable(
+                snmp_handler=self.snmp_handler,
+                logger=self.logger,
+                if_table=self.if_table_service,
+            )
         return self._entity_table
 
     @property
@@ -53,31 +55,28 @@ class GenericSNMPAutoload(object):
         return self._system_info
 
     def load_mibs(self, path):
-        """
-        Loads mibs inside snmp handler
-
-        """
-        # path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mibs"))
+        """Loads mibs inside snmp handler."""
         self.snmp_handler.update_mib_sources(path)
 
-    def discover(self,
-                 supported_os,
-                 resource_model,
-                 validate_module_id_by_port_name=False):
-        """General entry point for autoload,
-        read device structure and attributes: chassis, modules, submodules, ports, port-channels and power supplies
+    def discover(
+        self, supported_os, resource_model, validate_module_id_by_port_name=False
+    ):
+        """General entry point for autoload.
 
-        :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel
+        Read device structure and attributes: chassis, modules, submodules, ports,
+        port-channels and power supplies
 
+        :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
         :return: AutoLoadDetails object
         """
-
-        self.entity_table_service.validate_module_id_by_port_name = validate_module_id_by_port_name
+        self.entity_table_service.validate_module_id_by_port_name = (
+            validate_module_id_by_port_name
+        )
         if not resource_model:
             return
         self._resource_model = resource_model
         if not self.system_info_service.is_valid_device_os(supported_os):
-            raise GeneralAutoloadError(self.__class__.__name__, 'Unsupported device OS')
+            raise GeneralAutoloadError(self.__class__.__name__, "Unsupported device OS")
         self.logger.info("*" * 70)
         self.logger.info("Start SNMP discovery process .....")
         self.system_info_service.fill_attributes(resource_model)
@@ -94,9 +93,6 @@ class GenericSNMPAutoload(object):
         return autoload_details
 
     def _build_structure(self, child_list, parent):
-        """
-
-        """
         for element in child_list:
             if isinstance(element.entity, SnmpEntityTable.ENTITY_CHASSIS):
                 chassis = self._get_chassis_attributes(element, parent)
@@ -114,10 +110,10 @@ class GenericSNMPAutoload(object):
                 self._get_ports_attributes(element, parent)
 
     def _get_chassis_attributes(self, chassis, parent):
-        """ Get Chassis element attributes
+        """Get Chassis element attributes.
+
         :type dict<str, cloudshell.snmp.autoload.snmp_entity_table.Element> chassis:
         """
-
         self.logger.info("Building Chassis")
         if not chassis.entity:
             return
@@ -132,8 +128,7 @@ class GenericSNMPAutoload(object):
         return chassis_object
 
     def _get_module_attributes(self, module, parent):
-        """ Set attributes for all discovered modules """
-
+        """Set attributes for all discovered modules."""
         self.logger.info("Building Modules")
 
         if isinstance(parent, self._resource_model.entities.Module):
@@ -143,7 +138,9 @@ class GenericSNMPAutoload(object):
             module_object = self._resource_model.entities.Module(index=module.id)
             parent.connect_module(module_object)
         else:
-            self.logger.error("Failed to load the following element {}".format(parent.name))
+            self.logger.error(
+                "Failed to load the following element {}".format(parent.name)
+            )
             return
 
         module_object.model = module.entity.model
@@ -154,12 +151,11 @@ class GenericSNMPAutoload(object):
         return module_object
 
     def _get_power_ports(self, power_port, parent_element):
-        """Get attributes for power ports provided in self.power_supply_list
+        """Get attributes for power ports provided in self.power_supply_list.
 
         :type power_port: object
         :return:
         """
-
         self.logger.info("Building Power Port")
         power_port_object = self._resource_model.entities.PowerPort(index=power_port.id)
         power_port_object.model = power_port.entity.base_entity.model
@@ -167,15 +163,16 @@ class GenericSNMPAutoload(object):
         power_port_object.version = power_port.entity.hardware_version
         power_port_object.serial_number = power_port.entity.serial_number
         parent_element.connect_power_port(power_port_object)
-        self.logger.info("Added " + power_port_object.model.strip(" \t\n\r") + " Power Port")
+        self.logger.info(
+            "Added " + power_port_object.model.strip(" \t\n\r") + " Power Port"
+        )
 
     def _get_port_channels(self, parent_resource):
-        """Get all port channels and set attributes for them
+        """Get all port channels and set attributes for them.
 
-        :type parent_resource: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel
+        :type parent_resource: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
         :return:
         """
-
         if not self.if_table_service.if_port_channels:
             return
         self.logger.info("Building Port Channels")
@@ -186,12 +183,18 @@ class GenericSNMPAutoload(object):
                 interface_id = "{0}".format(match_object.group(0))
                 associated_ports = ""
                 for port in if_port_channel.associated_port_list:
-                    if_port_name = self.if_table_service.get_if_entity_by_index(port).if_name
-                    associated_ports = if_port_name.replace('/', '-').replace(' ', '') + '; '
+                    if_port_name = self.if_table_service.get_if_entity_by_index(
+                        port
+                    ).if_name
+                    associated_ports = (
+                        if_port_name.replace("/", "-").replace(" ", "") + "; "
+                    )
 
-                port_channel = self._resource_model.entities.PortChannel(index=interface_id)
+                port_channel = self._resource_model.entities.PortChannel(
+                    index=interface_id
+                )
 
-                port_channel.associated_ports = associated_ports.strip(' \t\n\r')
+                port_channel.associated_ports = associated_ports.strip(" \t\n\r")
                 port_channel.port_description = if_port_channel.if_port_description
                 port_channel.ipv4_address = if_port_channel.ipv4_address
                 port_channel.ipv6_address = if_port_channel.ipv6_address
@@ -200,24 +203,28 @@ class GenericSNMPAutoload(object):
                 self.logger.info("Added " + interface_model + " Port Channel")
 
             else:
-                self.logger.error("Adding of {0} failed. Name is invalid".format(interface_model))
+                self.logger.error(
+                    "Adding of {0} failed. Name is invalid".format(interface_model)
+                )
 
         self.logger.info("Building Port Channels completed")
 
     def _get_ports_attributes(self, port, parent_element):
-        """Get resource details and attributes for every port in self.port_list
-
-        :return:
-        """
-
-        if not port.port_name:
+        """Get resource details and attributes for every port in self.port_list."""
+        name = (
+            port.if_entity.if_name
+            or port.if_entity.if_descr_name
+            or port.entity.base_entity.name
+            or port.entity.base_entity.description
+        )
+        if not name:
             return
 
         self.logger.info("Trying to load port {}:".format(port.if_entity.port_name))
 
-        port_object = self._resource_model.entities.Port(index=port.if_entity.if_index,
-                                                         name=port.port_name.replace("/", "-"))
-
+        port_object = self._resource_model.entities.Port(
+            index=port.if_entity.if_index, name=port.port_name.replace("/", "-")
+        )
         port_object.mac_address = port.if_entity.if_mac
         port_object.l2_protocol_type = port.if_entity.if_type.replace("'", "")
         port_object.ipv4_address = port.if_entity.ipv4_address
