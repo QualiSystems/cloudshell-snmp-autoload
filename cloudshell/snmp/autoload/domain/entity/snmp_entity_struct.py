@@ -60,7 +60,7 @@ class PowerPort(BaseModuleEntity):
         self._hw_version = None
 
     @property
-    def hw_version(self):
+    def hardware_version(self):
         if self._hw_version is None:
             self._hw_version = self.base_entity.snmp_service.get_property(
                 ENTITY_HW_VERSION.get_snmp_mib_oid(self.base_entity.index)).safe_value

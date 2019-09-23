@@ -17,7 +17,7 @@ class SnmpIfEntity(object):
         if port_name_response.mib_id == PORT_DESCR_NAME.mib_id:
             self._if_descr_name = port_name_response.safe_value
         else:
-            self._if_name = port_name_response
+            self._if_name = port_name_response.safe_value
         self._ips_list = None
 
     @property

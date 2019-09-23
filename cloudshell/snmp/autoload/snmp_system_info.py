@@ -99,8 +99,9 @@ class SnmpSystemInfo(object):
         resource.system_name = self._snmp_v2_obj.get_system_name()
         resource.location = self._snmp_v2_obj.get_system_location()
         resource.os_version = self._get_device_os_version()
-        resource.model = self._get_device_model()
-        resource.model_name = self._get_model_name(resource.model)
+        model = self._get_device_model()
+        resource.model = model
+        resource.model_name = self._get_model_name(model)
 
         self._logger.info("Building Root completed")
 

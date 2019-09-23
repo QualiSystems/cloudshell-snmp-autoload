@@ -128,7 +128,7 @@ class GenericSNMPAutoload(object):
         chassis_object.serial_number = chassis.entity.serial_number
 
         parent.connect_chassis(chassis_object)
-        self.logger.info("Added " + chassis_object.model + " Chassis")
+        self.logger.info("Added " + chassis.entity.model + " Chassis")
         return chassis_object
 
     def _get_module_attributes(self, module, parent):
@@ -162,8 +162,8 @@ class GenericSNMPAutoload(object):
 
         self.logger.info("Building Power Port")
         power_port_object = self._resource_model.entities.PowerPort(index=power_port.id)
-        power_port_object.model = power_port.entity.model
-        power_port_object.port_description = power_port.entity.descirption
+        power_port_object.model = power_port.entity.base_entity.model
+        power_port_object.port_description = power_port.entity.base_entity.description
         power_port_object.version = power_port.entity.hardware_version
         power_port_object.serial_number = power_port.entity.serial_number
         parent_element.connect_power_port(power_port_object)
