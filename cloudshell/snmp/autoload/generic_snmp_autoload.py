@@ -159,7 +159,7 @@ class GenericSNMPAutoload(object):
         self.logger.info("Building Power Port")
         power_port_object = self._resource_model.entities.PowerPort(index=power_port.id)
         power_port_object.model = power_port.entity.model
-        power_port_object.port_description = power_port.entity.descirption
+        power_port_object.port_description = power_port.entity.description
         power_port_object.version = power_port.entity.hardware_version
         power_port_object.serial_number = power_port.entity.serial_number
         parent_element.connect_power_port(power_port_object)
