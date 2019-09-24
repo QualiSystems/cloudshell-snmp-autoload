@@ -105,3 +105,4 @@ venv.bak/
 /tests/test_*.py
 
 .idea/
+/int_tests
