@@ -102,3 +102,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+/tests/test_*.py
+
+.idea/
+/int_tests
