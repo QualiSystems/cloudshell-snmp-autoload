@@ -100,7 +100,7 @@ class BaseEntity(object):
             if not self.vendor_type:
                 return ""
             entity_class = entity_class.replace("'", "")
-            for key, value in ENTITY_VENDOR_TYPE_TO_CLASS_MAP.iteritems():
+            for key, value in ENTITY_VENDOR_TYPE_TO_CLASS_MAP.items():
                 if key.search(self.vendor_type.lower()):
                     entity_class = value
         if ENTITY_TO_CONTAINER_PATTERN.search(self.vendor_type):
