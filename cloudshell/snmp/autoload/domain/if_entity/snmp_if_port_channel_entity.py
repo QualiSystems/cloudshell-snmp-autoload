@@ -28,7 +28,7 @@ class SnmpIfPortChannel(SnmpIfEntity):
         for (
             key,
             value,
-        ) in self._port_attributes_snmp_tables.port_channel_ports.iteritems():
+        ) in self._port_attributes_snmp_tables.port_channel_ports.items():
             if str(self.if_index) in value["dot3adAggPortAttachedAggID"]:
                 result.append(key)
         return result
