@@ -65,8 +65,9 @@ class GenericSNMPAutoload(object):
 
         Read device structure and attributes: chassis, modules, submodules, ports,
         port-channels and power supplies
-
         :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
+        :param str supported_os:
+        :param bool validate_module_id_by_port_name:
         :return: AutoLoadDetails object
         """
         self.entity_table_service.validate_module_id_by_port_name = (
