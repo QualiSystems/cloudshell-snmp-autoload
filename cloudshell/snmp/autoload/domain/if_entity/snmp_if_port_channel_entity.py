@@ -25,10 +25,11 @@ class SnmpIfPortChannel(SnmpIfEntity):
     def _get_associated_ports(self):
         """Get all ports associated with provided port channel."""
         result = []
-        for (
-            key,
-            value,
-        ) in self._port_attributes_snmp_tables.port_channel_ports.items():
-            if str(self.if_index) in value["dot3adAggPortAttachedAggID"]:
+        for (key,) in self._port_attributes_snmp_tables.port_channel_ports.keys():
+            # Todo looks weird, requires rethink and update
+            agg_id = self._port_attributes_snmp_tables.port_channel_ports.get(
+                key, {}
+            ).get("dot3adAggPortAttachedAggID")
+            if agg_id and str(self.if_index) in agg_id:
                 result.append(key)
         return result
