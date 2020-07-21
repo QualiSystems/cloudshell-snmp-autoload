@@ -7,13 +7,15 @@ from cloudshell.snmp.autoload.domain.snmpv2_data import SnmpV2MibData
 
 class SnmpSystemInfo(object):
     DEVICE_MODEL_PATTERN = re.compile(r"::(?P<model>\S+$)")
+    VENDOR_OID_PATTERN = re.compile(r"1.3.6.1.4.1.\d+")
     OS_VERSION_PATTERN = re.compile(r"Version (?P<os_version>[^\s,]+)")
 
-    def __init__(self, snmp_handler, logger):
+    def __init__(self, snmp_handler, logger, vendor=None):
+        self._vendor = vendor
         self._snmp_handler = snmp_handler
         self._logger = logger
         self._device_model_pattern = self.DEVICE_MODEL_PATTERN
-        self._os_version_pattern = self.DEVICE_MODEL_PATTERN
+        self._os_version_pattern = self.OS_VERSION_PATTERN
         self._device_model_map_path = None
         self._snmp_v2_obj = SnmpV2MibData(snmp_handler, logger)
 
@@ -77,12 +79,29 @@ class SnmpSystemInfo(object):
         :rtype: str
         """
         result = ""
-        sys_description = str(self._snmp_v2_obj.get_system_object_id())
-        match_name = self._device_model_pattern.search(sys_description)
+        sys_obj_id = str(self._snmp_v2_obj.get_system_object_id())
+        match_name = self._device_model_pattern.search(sys_obj_id)
         if match_name:
-            result = match_name.group("model")
+            result = match_name.group("model").capitalize()
 
         return result
+
+    def _get_vendor(self):
+        """Get device model from the SNMPv2 mib.
+
+        :return: device model
+        :rtype: str
+        """
+        if not self._vendor:
+            sys_obj_id = self._snmp_v2_obj.get_system_object_id()
+            sys_obj_id_oid = ".".join(map(str, sys_obj_id.raw_value))
+            oid_match = self.VENDOR_OID_PATTERN.search(sys_obj_id_oid)
+            if oid_match:
+                self._vendor = self._snmp_handler.translate_oid(
+                    oid_match.group()
+                ).capitalize()
+
+        return self._vendor
 
     def _get_device_os_version(self):
         """Get device OS Version form snmp SNMPv2 mib.
@@ -109,6 +128,7 @@ class SnmpSystemInfo(object):
         resource.system_name = self._snmp_v2_obj.get_system_name()
         resource.location = self._snmp_v2_obj.get_system_location()
         resource.os_version = self._get_device_os_version()
+        resource.vendor = self._get_vendor()
         model = self._get_device_model()
         resource.model = model
         resource.model_name = self._get_model_name(model)
