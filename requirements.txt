@@ -1,1 +1,1 @@
-cloudshell-snmp>=4.0,<5
+cloudshell-snmp>=4.0.1,<5
