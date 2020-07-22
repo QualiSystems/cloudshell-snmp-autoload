@@ -4,13 +4,11 @@ repos:
     hooks:
       - id: isort
         language_version: python3.7
-        exclude: '/mibs'
   - repo: https://github.com/python/black
     rev: 19.10b0
     hooks:
       - id: black
         language_version: python3.7
-        exclude: '/mibs'
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.7.9
     hooks:
