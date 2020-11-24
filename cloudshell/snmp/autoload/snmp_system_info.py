@@ -122,16 +122,19 @@ class SnmpSystemInfo(object):
 
         :type resource: cloudshell.shell_standards.autoload_generic_models.GenericResourceModel  # noqa: E501
         """
-        self._logger.info("Building Root started")
+        self._logger.debug("Building Root started")
 
         resource.contact_name = self._snmp_v2_obj.get_system_contact()
         resource.system_name = self._snmp_v2_obj.get_system_name()
         resource.location = self._snmp_v2_obj.get_system_location()
         resource.os_version = self._get_device_os_version()
-        resource.vendor = self._get_vendor()
-        model = self._get_device_model()
+        vendor = self._get_vendor()
+        resource.vendor = vendor
+
+        raw_model = self._get_device_model()
+        model = re.sub(r"^{}".format(vendor), "", raw_model, flags=re.IGNORECASE)
         resource.model = model
-        resource.model_name = self._get_model_name(model)
+        resource.model_name = self._get_model_name(raw_model)
 
         self._logger.info("Building Root completed")
 

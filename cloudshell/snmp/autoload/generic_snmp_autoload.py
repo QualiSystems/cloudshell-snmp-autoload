@@ -115,7 +115,7 @@ class GenericSNMPAutoload(object):
 
         :type dict<str, cloudshell.snmp.autoload.snmp_entity_table.Element> chassis:
         """
-        self.logger.info("Building Chassis")
+        self.logger.debug("Building Chassis")
         if not chassis.entity:
             return
 
@@ -130,7 +130,7 @@ class GenericSNMPAutoload(object):
 
     def _get_module_attributes(self, module, parent):
         """Set attributes for all discovered modules."""
-        self.logger.info("Building Modules")
+        self.logger.debug("Building Modules")
 
         if isinstance(parent, self._resource_model.entities.Module):
             module_object = self._resource_model.entities.SubModule(index=module.id)
@@ -157,7 +157,7 @@ class GenericSNMPAutoload(object):
         :type power_port: object
         :return:
         """
-        self.logger.info("Building Power Port")
+        self.logger.debug("Building Power Port")
         power_port_object = self._resource_model.entities.PowerPort(index=power_port.id)
         power_port_object.model = power_port.entity.base_entity.model
         power_port_object.port_description = power_port.entity.base_entity.description
@@ -165,7 +165,9 @@ class GenericSNMPAutoload(object):
         power_port_object.serial_number = power_port.entity.serial_number
         parent_element.connect_power_port(power_port_object)
         self.logger.info(
-            "Added " + power_port_object.model.strip(" \t\n\r") + " Power Port"
+            "Added "
+            + power_port.entity.base_entity.model.strip(" \t\n\r")
+            + " Power Port"
         )
 
     def _get_port_channels(self, parent_resource):
@@ -221,7 +223,7 @@ class GenericSNMPAutoload(object):
         if not name:
             return
 
-        self.logger.info("Trying to load port {}:".format(port.if_entity.port_name))
+        self.logger.debug("Trying to load port {}:".format(port.if_entity.port_name))
 
         port_object = self._resource_model.entities.Port(
             index=port.if_entity.if_index, name=port.port_name.replace("/", "-")
