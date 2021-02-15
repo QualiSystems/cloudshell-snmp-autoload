@@ -196,6 +196,10 @@ class SnmpEntityTable(object):
                 self._load_port(self.ENTITY_PORT(entity))
             elif "powersupply" in entity.entity_class.lower():
                 self._load_power_port(self.ENTITY_POWER_PORT(entity))
+            elif "chassis" in entity.entity_class.lower():
+                if entity.index not in self._chassis_dict:
+                    chassis = Element(self.ENTITY_CHASSIS(entity))
+                    self._chassis_dict[entity.index] = chassis
 
     def _validate_modules_structure(self, port):
         port_parent_list = self._get_port_parent_modules_list(port)
