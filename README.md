@@ -1,6 +1,6 @@
 # cloudshell-snmp-autoload
 
-[![Build status](https://travis-ci.org/QualiSystems/cloudshell-snmp-autoload.svg?branch=dev)](https://travis-ci.org/QualiSystems/cloudshell-snmp-autoload)
+[![Build status](https://github.com/QualiSystems/cloudshell-snmp-autoload/workflows/CI/badge.svg?branch=master)](https://github.com/QualiSystems/cloudshell-snmp-autoload/actions?query=branch%3Amaster)
 [![codecov](https://codecov.io/gh/QualiSystems/cloudshell-snmp-autoload/branch/dev/graph/badge.svg)](https://codecov.io/gh/QualiSystems/cloudshell-snmp-autoload)
 [![PyPI version](https://badge.fury.io/py/cloudshell-snmp-autoload.svg)](https://badge.fury.io/py/cloudshell-snmp-autoload)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
