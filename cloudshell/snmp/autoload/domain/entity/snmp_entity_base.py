@@ -93,17 +93,18 @@ class BaseEntity(object):
         return self._serial_number
 
     def _get_physical_class(self):
+        if ENTITY_TO_CONTAINER_PATTERN.search(self.vendor_type):
+            return "container"
         entity_class = self.snmp_service.get_property(
             ENTITY_CLASS.get_snmp_mib_oid(self.index)
-        ).safe_value
-        if not entity_class or entity_class == "''" or "other" in entity_class:
+        ).safe_value.strip("'")
+
+        if not entity_class or "other" in entity_class:
             if not self.vendor_type:
                 return ""
-            entity_class = entity_class.replace("'", "")
             for key, value in ENTITY_VENDOR_TYPE_TO_CLASS_MAP.items():
-                if key.search(self.vendor_type.lower()):
+                if key.search(self.vendor_type):
                     # ToDo could be a potential issue here.
                     entity_class = value
-        if ENTITY_TO_CONTAINER_PATTERN.search(self.vendor_type):
-            entity_class = "container"
-        return entity_class.replace("'", "")
+
+        return entity_class

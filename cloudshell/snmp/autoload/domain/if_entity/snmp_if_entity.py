@@ -1,3 +1,4 @@
+from functools import lru_cache
 from ipaddress import IPv4Address, IPv6Address
 
 from cloudshell.snmp.autoload.constants.port_constants import (
@@ -27,6 +28,7 @@ class SnmpIfEntity(object):
         self._ips_list = None
 
     @property
+    @lru_cache()
     def port_name(self):
         return self.if_name or self.if_descr_name
 
