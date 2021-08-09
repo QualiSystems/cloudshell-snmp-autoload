@@ -1,30 +1,27 @@
+import re
 from functools import lru_cache
-from ipaddress import IPv4Address, IPv6Address
 
 from cloudshell.snmp.autoload.constants.port_constants import (
     PORT_DESCR_NAME,
     PORT_DESCRIPTION,
+    PORT_MAC,
+    PORT_MTU,
     PORT_NAME,
+    PORT_SPEED,
+    PORT_TYPE,
 )
 
 
-class SnmpIfEntity(object):
-    def __init__(
-        self, snmp_handler, logger, port_name_response, port_attributes_snmp_tables
-    ):
-        self.if_index = port_name_response.index
-        self._snmp = snmp_handler
-        self._port_attributes_snmp_tables = port_attributes_snmp_tables
-        self._logger = logger
-        self._ipv4 = None
-        self._ipv6 = None
+class SnmpIfEntity:
+    IF_TYPE_REPLACE_PATTERN = re.compile("^[/']|[/']$")
+    PORT_IDS_PATTERN = re.compile(r"\d+(/\d+)*$", re.IGNORECASE)
+
+    def __init__(self, port_index, port_row):
+        self.if_index = port_index
+        self._if_table_row = port_row
         self._if_alias = None
         self._if_name = None
         self._if_descr_name = None
-        if port_name_response.mib_id == PORT_DESCR_NAME.mib_id:
-            self._if_descr_name = port_name_response.safe_value
-        else:
-            self._if_name = port_name_response.safe_value
         self._ips_list = None
 
     @property
@@ -33,87 +30,41 @@ class SnmpIfEntity(object):
         return self.if_name or self.if_descr_name
 
     @property
+    @lru_cache()
     def if_name(self):
-        if not self._if_name:
-            self._if_name = self._snmp.get_property(
-                PORT_NAME.get_snmp_mib_oid(self.if_index)
-            ).safe_value
-        return self._if_name
+        return self._if_table_row.get(PORT_NAME.object_name).safe_value
 
     @property
     def if_descr_name(self):
-        if not self._if_descr_name:
-            self._if_descr_name = self._snmp.get_property(
-                PORT_DESCR_NAME.get_snmp_mib_oid(self.if_index)
-            ).safe_value
-        return self._if_descr_name
+        return self._if_table_row.get(PORT_DESCR_NAME.object_name).safe_value
 
     @property
     def if_port_description(self):
-        if not self._if_alias:
-            self._if_alias = self._snmp.get_property(
-                PORT_DESCRIPTION.get_snmp_mib_oid(self.if_index)
-            ).safe_value
-        return self._if_alias
+        return self._if_table_row.get(PORT_DESCRIPTION.object_name).safe_value
 
     @property
-    def ipv4_address(self):
-        if not self._ipv4:
-            if self._ips_list is None:
-                self._get_ip()
-            self._ipv4 = self._get_ipv4() or ""
-        return self._ipv4
+    def if_type(self):
+        if_type = self._if_table_row.get(PORT_TYPE.object_name,).safe_value or "other"
+        return if_type.strip("'")
 
     @property
-    def ipv6_address(self):
-        if not self._ipv6:
-            if self._ips_list is None:
-                self._get_ip()
-            self._ipv6 = self._get_ipv6() or ""
-        return self._ipv6
+    @lru_cache()
+    def port_id(self):
+        port_id = self.PORT_IDS_PATTERN.search(self.port_name)
+        if port_id:
+            return port_id.group()
 
-    def _get_ip(self):
-        self._ips_list = [
-            x
-            for x in self._port_attributes_snmp_tables.ip_mixed_list
-            if x.safe_value == self.if_index
-        ]
-        for ip in self._ips_list:
-            index = ip.index.replace("'", "")
-            if index.startswith("ipv6"):
-                try:
-                    ipv6 = IPv6Address((index.replace("ipv6.0x", "")).decode("hex"))
-                except Exception:
-                    ipv6 = ""
-                self._ipv6 = ipv6
-            elif index.startswith("ipv4"):
-                try:
-                    ipv4 = IPv4Address((index.replace("ipv4.0x", "")).decode("hex"))
-                except Exception:
-                    ipv4 = ""
-                self._ipv4 = ipv4
+    @property
+    @lru_cache()
+    def if_speed(self):
+        return self._if_table_row.get(PORT_SPEED.object_name).safe_value
 
-    def _get_ipv4(self):
-        """Get IPv4 address details for provided port.
+    @property
+    @lru_cache()
+    def if_mtu(self):
+        return self._if_table_row.get(PORT_MTU.object_name).safe_value
 
-        :return str IPv4 Address
-        """
-        if self._port_attributes_snmp_tables.ip_v4_old_list:
-            for snmp_response in self._port_attributes_snmp_tables.ip_v4_old_list:
-                if (
-                    snmp_response.safe_value
-                    and snmp_response.safe_value == self.if_index
-                ):
-                    return snmp_response.index
-
-    def _get_ipv6(self):
-        """Get IPv6 address details for provided port.
-
-        :return str IPv6 Address
-        """
-        if self._port_attributes_snmp_tables.ip_v6_list:
-            for snmp_response in self._port_attributes_snmp_tables.ip_v6_list:
-                if snmp_response.safe_value and snmp_response.index.startswith(
-                    "{}.".format(self.if_index)
-                ):
-                    return snmp_response.index.replace("{}.".format(self.if_index), "")
+    @property
+    @lru_cache()
+    def if_mac(self):
+        return self._if_table_row.get(PORT_MAC.object_name).safe_value

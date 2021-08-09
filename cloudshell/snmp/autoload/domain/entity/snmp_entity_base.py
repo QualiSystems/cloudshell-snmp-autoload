@@ -1,9 +1,12 @@
 from cloudshell.snmp.autoload.constants.entity_constants import (
     ENTITY_CLASS,
     ENTITY_DESCRIPTION,
+    ENTITY_HW_VERSION,
     ENTITY_MODEL,
     ENTITY_NAME,
+    ENTITY_OS_VERSION,
     ENTITY_PARENT_ID,
+    ENTITY_POSITION,
     ENTITY_SERIAL,
     ENTITY_TO_CONTAINER_PATTERN,
     ENTITY_VENDOR_TYPE,
@@ -12,10 +15,9 @@ from cloudshell.snmp.autoload.constants.entity_constants import (
 
 
 class BaseEntity(object):
-    def __init__(self, snmp_service, snmp_position_response):
-        self.snmp_service = snmp_service
-        self.index = snmp_position_response.index
-        self._position_id = snmp_position_response.safe_value
+    def __init__(self, index, entity_row_response):
+        self.index = index
+        self.entity_row_response = entity_row_response
         self._parent_id = None
         self._entity_class = None
         self._vendor_type = None
@@ -26,33 +28,27 @@ class BaseEntity(object):
 
     @property
     def position_id(self):
-        if self._position_id == "-1":
-            self._position_id = "0"
-        return self._position_id
+        return self.entity_row_response.get(ENTITY_POSITION.object_name).safe_value
+
+    @property
+    def os_version(self):
+        return self.entity_row_response.get(ENTITY_OS_VERSION.object_name).safe_value
+
+    @property
+    def hw_version(self):
+        return self.entity_row_response.get(ENTITY_HW_VERSION.object_name).safe_value
 
     @property
     def description(self):
-        if self._description is None:
-            self._description = self.snmp_service.get_property(
-                ENTITY_DESCRIPTION.get_snmp_mib_oid(self.index)
-            )
-        return self._description.safe_value
+        return self.entity_row_response.get(ENTITY_DESCRIPTION.object_name).safe_value
 
     @property
     def name(self):
-        if self._name is None:
-            self._name = self.snmp_service.get_property(
-                ENTITY_NAME.get_snmp_mib_oid(self.index)
-            )
-        return self._name.safe_value or ""
+        return self.entity_row_response.get(ENTITY_NAME.object_name).safe_value
 
     @property
     def parent_id(self):
-        if self._parent_id is None:
-            self._parent_id = self.snmp_service.get_property(
-                ENTITY_PARENT_ID.get_snmp_mib_oid(self.index)
-            ).safe_value
-        return self._parent_id
+        return self.entity_row_response.get(ENTITY_PARENT_ID.object_name).safe_value
 
     @property
     def entity_class(self):
@@ -62,49 +58,26 @@ class BaseEntity(object):
 
     @property
     def vendor_type(self):
-        if self._vendor_type is None:
-            self._vendor_type = self.snmp_service.get_property(
-                ENTITY_VENDOR_TYPE.get_snmp_mib_oid(self.index)
-            )
-            if self._vendor_type:
-                self._vendor_type = self._vendor_type.safe_value
-        return self._vendor_type
+        return self.entity_row_response.get(ENTITY_VENDOR_TYPE.object_name).safe_value
 
     @property
     def model(self):
-        if self._model is None:
-            self._model = (
-                self.snmp_service.get_property(
-                    ENTITY_MODEL.get_snmp_mib_oid(self.index)
-                )
-                or self.name
-            )
-        return self._model.safe_value
+        return self.entity_row_response.get(ENTITY_MODEL.object_name).safe_value
 
     @property
     def serial_number(self):
-        if self._serial_number is None:
-            self._serial_number = (
-                self.snmp_service.get_property(
-                    ENTITY_SERIAL.get_snmp_mib_oid(self.index)
-                ).safe_value
-                or ""
-            )
-        return self._serial_number
+        return self.entity_row_response.get(ENTITY_SERIAL.object_name).safe_value
 
     def _get_physical_class(self):
         if ENTITY_TO_CONTAINER_PATTERN.search(self.vendor_type):
             return "container"
-        entity_class = self.snmp_service.get_property(
-            ENTITY_CLASS.get_snmp_mib_oid(self.index)
-        ).safe_value.strip("'")
+        entity_class = self.entity_row_response.get(ENTITY_CLASS.object_name).safe_value
 
         if not entity_class or "other" in entity_class:
             if not self.vendor_type:
                 return ""
             for key, value in ENTITY_VENDOR_TYPE_TO_CLASS_MAP.items():
                 if key.search(self.vendor_type):
-                    # ToDo could be a potential issue here.
                     entity_class = value
 
         return entity_class

@@ -5,9 +5,9 @@ import re
 
 from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.snmp_autoload_helper import log_autoload_details
-from cloudshell.snmp.autoload.snmp_entity_table import SnmpEntityTable
-from cloudshell.snmp.autoload.snmp_if_table import SnmpIfTable
-from cloudshell.snmp.autoload.snmp_system_info import SnmpSystemInfo
+from cloudshell.snmp.autoload.service.physical_entities_table import SnmpEntityTable
+from cloudshell.snmp.autoload.service.system_info_table import SnmpSystemInfo
+from cloudshell.snmp.autoload.trash.snmp_if_table import SnmpIfTable
 
 
 class GenericSNMPAutoload(object):
@@ -231,7 +231,7 @@ class GenericSNMPAutoload(object):
         self.logger.debug("Trying to load port {}:".format(port.if_entity.port_name))
 
         port_object = self._resource_model.entities.Port(
-            index=port.if_entity.if_index, name=port.port_name.replace("/", "-")
+            index=port.if_entity.if_index, name=name.replace("/", "-")
         )
         port_object.mac_address = port.if_entity.if_mac
         port_object.l2_protocol_type = port.if_entity.if_type.replace("'", "")
