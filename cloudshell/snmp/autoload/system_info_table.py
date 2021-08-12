@@ -2,7 +2,7 @@ import re
 
 from cloudshell.shell.flows.autoload.autoload_utils import get_device_name
 
-from cloudshell.snmp.autoload.domain.snmpv2_data import SnmpV2MibData
+from cloudshell.snmp.autoload.helper.snmpv2_data import SnmpV2MibData
 
 
 class SnmpSystemInfo(object):

@@ -3,8 +3,8 @@ from copy import copy
 from functools import lru_cache
 
 from cloudshell.snmp.autoload.constants.entity_constants import ENTITY_TO_IF_ID
-from cloudshell.snmp.autoload.service.physical_entities_table import PhysicalTable
-from cloudshell.snmp.autoload.service.port_table import PortsTable
+from cloudshell.snmp.autoload.physical_entities_table import PhysicalTable
+from cloudshell.snmp.autoload.port_table import PortsTable
 
 
 class PortMappingService(object):

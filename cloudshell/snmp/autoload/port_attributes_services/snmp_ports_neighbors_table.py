@@ -6,7 +6,7 @@ from threading import Thread
 from cloudshell.snmp.core.snmp_service import SnmpService
 
 from cloudshell.snmp.autoload.constants import port_constants
-from cloudshell.snmp.autoload.service.port_services.port_service_interface import (
+from cloudshell.snmp.autoload.port_attributes_services.port_service_interface import (
     PortAttributesServiceInterface,
 )
 
@@ -76,8 +76,9 @@ class PortNeighbours(PortAttributesServiceInterface):
                     loc_dict[loc_port_id.safe_value] = adjacent_line
                 elif loc_port_desc:
                     loc_dict[loc_port_desc.safe_value] = adjacent_line
-                subtype = loc_subtype.safe_value.lower().strip("'")
-                self._adjacent_table[subtype].update(loc_dict)
+                if loc_subtype:
+                    subtype = loc_subtype.safe_value.lower().strip("'")
+                    self._adjacent_table[subtype].update(loc_dict)
 
     def set_port_attributes(self, port_object):
         port_object.adjacent = self.get_adjacent_by_port(port_object)

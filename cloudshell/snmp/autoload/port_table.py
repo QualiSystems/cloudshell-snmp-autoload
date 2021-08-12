@@ -1,20 +1,20 @@
 import re
 
 from cloudshell.snmp.autoload.constants import port_constants
-from cloudshell.snmp.autoload.domain.if_entity.snmp_if_entity import SnmpIfEntity
-from cloudshell.snmp.autoload.service.port_services.snmp_associated_ports import (
+from cloudshell.snmp.autoload.helper.snmp_if_entity import SnmpIfEntity
+from cloudshell.snmp.autoload.port_attributes_services.snmp_associated_ports import (
     PortChannelsAssociatedPorts,
 )
-from cloudshell.snmp.autoload.service.port_services.snmp_port_ip_tables import (
+from cloudshell.snmp.autoload.port_attributes_services.snmp_port_ip_tables import (
     PortIPTables,
 )
-from cloudshell.snmp.autoload.service.port_services.snmp_ports_auto_negotioation import (  # noqa #E501
+from cloudshell.snmp.autoload.port_attributes_services.snmp_ports_auto_negotioation import (  # noqa #E501
     PortAutoNegotiation,
 )
-from cloudshell.snmp.autoload.service.port_services.snmp_ports_duplex_table import (
+from cloudshell.snmp.autoload.port_attributes_services.snmp_ports_duplex_table import (
     PortDuplex,
 )
-from cloudshell.snmp.autoload.service.port_services.snmp_ports_neighbors_table import (
+from cloudshell.snmp.autoload.port_attributes_services.snmp_ports_neighbors_table import (  # noqa #E501
     PortNeighbours,
 )
 
@@ -59,6 +59,7 @@ class PortsTable(object):
 
     @property
     def if_ports(self):
+        # ToDo Add a brief description of returned structure.
         """{index: port object} dict.
 
         :return:
@@ -69,6 +70,7 @@ class PortsTable(object):
 
     @property
     def if_port_channels(self):
+        # ToDo Add a brief description of returned structure.
         if not self._if_port_channels_dict:
             self._get_if_entities()
         return self._if_port_channels_dict

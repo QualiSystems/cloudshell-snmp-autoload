@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 
-from cloudshell.snmp.autoload.service.port_table import PortsTable
+from cloudshell.snmp.autoload.port_table import PortsTable
 
 from tests.cloudshell.snmp.port_snmp_data import PORT_SNMP_DATA
 

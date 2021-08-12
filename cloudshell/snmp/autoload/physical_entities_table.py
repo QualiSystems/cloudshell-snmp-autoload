@@ -1,6 +1,6 @@
 import re
 
-from cloudshell.snmp.autoload.domain.entity.snmp_entity_base import BaseEntity
+from cloudshell.snmp.autoload.helper.snmp_entity_base import BaseEntity
 
 
 class PhysicalTable(object):

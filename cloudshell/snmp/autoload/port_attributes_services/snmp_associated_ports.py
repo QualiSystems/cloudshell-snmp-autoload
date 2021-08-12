@@ -4,7 +4,7 @@ from logging import Logger
 from cloudshell.snmp.core.snmp_service import SnmpService
 
 from cloudshell.snmp.autoload.constants import port_constants
-from cloudshell.snmp.autoload.service.port_services.port_service_interface import (
+from cloudshell.snmp.autoload.port_attributes_services.port_service_interface import (
     PortAttributesServiceInterface,
 )
 
