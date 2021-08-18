@@ -28,6 +28,8 @@ class GenericSNMPAutoload(object):
         self._system_info = None
         self._if_table = None
         self._validate_module_id_by_port_name = False
+        self._if_ports_in_entity = False
+        self._chassis = {}
 
     @property
     def if_table_service(self):
@@ -62,7 +64,6 @@ class GenericSNMPAutoload(object):
         self, supported_os, resource_model, validate_module_id_by_port_name=False
     ):
         """General entry point for autoload.
-
         Read device structure and attributes: chassis, modules, submodules, ports,
         port-channels and power supplies
         :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
@@ -77,7 +78,8 @@ class GenericSNMPAutoload(object):
             return
         self._resource_model = resource_model
         if not self.system_info_service.is_valid_device_os(supported_os):
-            raise GeneralAutoloadError(self.__class__.__name__, "Unsupported device OS")
+            raise GeneralAutoloadError("Unsupported device OS")
+
         self.logger.info("*" * 70)
         self.logger.info("Start SNMP discovery process .....")
         self.system_info_service.fill_attributes(resource_model)
@@ -88,7 +90,12 @@ class GenericSNMPAutoload(object):
             self._build_structure(entity_chassis_tree_dict.values(), resource_model)
             self._get_port_channels(resource_model)
 
-        autoload_details = resource_model.build()
+        if not self._if_ports_in_entity:
+            self._add_ports_from_iftable()
+
+        autoload_details = resource_model.build(
+            filter_empty_modules=True, use_new_unique_id=True
+        )
 
         log_autoload_details(self.logger, autoload_details)
         return autoload_details
@@ -97,6 +104,7 @@ class GenericSNMPAutoload(object):
         for element in child_list:
             if isinstance(element.entity, SnmpEntityTable.ENTITY_CHASSIS):
                 chassis = self._get_chassis_attributes(element, parent)
+                self._chassis.update({str(element.entity.index): chassis})
                 self._build_structure(element.child_list, chassis)
 
             elif isinstance(element.entity, SnmpEntityTable.ENTITY_MODULE):
@@ -108,7 +116,42 @@ class GenericSNMPAutoload(object):
                 self._get_power_ports(element, parent)
 
             elif isinstance(element.entity, SnmpEntityTable.ENTITY_PORT):
-                self._get_ports_attributes(element, parent)
+                self._if_ports_in_entity = self._if_ports_in_entity or True
+                self._get_ports_attributes(element.if_entity, parent)
+
+    def _add_ports_from_iftable(self):
+        """Get ports data.
+        Get resource details and attributes for every port
+        base on data from IF-MIB Table.
+        """
+        self.logger.info("Loading Ports ...")
+
+        for if_index, interface in self.if_table_service.if_ports.items():
+            if self.if_table_service.PORT_VALID_TYPE.search(interface.if_type):
+                self.logger.debug("Trying to load port {}:".format(interface.port_name))
+                match = re.search(
+                    r"(?P<ch_index>\d+)(/\d+)*/(?P<if_index>\d+)$",
+                    interface.if_descr_name,
+                    re.IGNORECASE,
+                )
+
+                if match:
+                    chassis_id = match.groupdict().get("ch_index")
+                    if chassis_id not in self._chassis:
+                        self._add_dummy_chassis(chassis_id)
+
+                    parent_element = self._chassis.get(chassis_id)
+                    self._get_ports_attributes(interface, parent_element)
+
+        self.logger.info("Building Ports completed")
+
+    def _add_dummy_chassis(self, chassis_id):
+        """Create Dummy Chassis."""
+        chassis_object = self._resource_model.entities.Chassis(index=chassis_id)
+
+        self._resource_model.connect_chassis(chassis_object)
+        self._chassis.update({str(chassis_id): chassis_object})
+        self.logger.info("Added Dummy Chassis with index {}".format(chassis_id))
 
     def _get_chassis_attributes(self, chassis, parent):
         """Get Chassis element attributes.
@@ -214,30 +257,25 @@ class GenericSNMPAutoload(object):
 
     def _get_ports_attributes(self, port, parent_element):
         """Get resource details and attributes for every port in self.port_list."""
-        name = (
-            port.if_entity.if_name
-            or port.if_entity.if_descr_name
-            or port.entity.base_entity.name
-            or port.entity.base_entity.description
-        )
+        name = port.port_name
         if not name:
             return
 
-        self.logger.debug("Trying to load port {}:".format(port.if_entity.port_name))
+        self.logger.debug("Trying to load port {}:".format(port.port_name))
 
         port_object = self._resource_model.entities.Port(
-            index=port.if_entity.if_index, name=port.port_name.replace("/", "-")
+            index=port.if_index, name=name.replace("/", "-")
         )
-        port_object.mac_address = port.if_entity.if_mac
-        port_object.l2_protocol_type = port.if_entity.if_type.replace("'", "")
-        port_object.ipv4_address = port.if_entity.ipv4_address
-        port_object.ipv6_address = port.if_entity.ipv6_address
-        port_object.port_description = port.if_entity.if_port_description
-        port_object.bandwidth = port.if_entity.if_speed
-        port_object.mtu = port.if_entity.if_mtu
-        port_object.duplex = port.if_entity.duplex
-        port_object.adjacent = port.if_entity.adjacent
-        port_object.auto_negotiation = port.if_entity.auto_negotiation
-        port_object.mac_address = port.if_entity.if_mac
+        port_object.mac_address = port.if_mac
+        port_object.l2_protocol_type = port.if_type.replace("'", "")
+        port_object.ipv4_address = port.ipv4_address
+        port_object.ipv6_address = port.ipv6_address
+        port_object.port_description = port.if_port_description
+        port_object.bandwidth = port.if_speed
+        port_object.mtu = port.if_mtu
+        port_object.duplex = port.duplex
+        port_object.adjacent = port.adjacent
+        port_object.auto_negotiation = port.auto_negotiation
+        port_object.mac_address = port.if_mac
         parent_element.connect_port(port_object)
         self.logger.info("Added {} Port".format(port.port_name))
