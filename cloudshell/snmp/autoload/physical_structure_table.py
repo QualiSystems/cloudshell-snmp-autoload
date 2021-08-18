@@ -7,8 +7,8 @@ from cloudshell.snmp.autoload.constants.entity_constants import (
 
 
 class PhysicalStructure(object):
-    def __init__(self, snmp_service, logger):
-        self._snmp_service = snmp_service
+    def __init__(self, snmp_handler, logger):
+        self._snmp_service = snmp_handler
         self._logger = logger
 
     @property

@@ -5,9 +5,7 @@ import re
 
 from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.snmp_autoload_helper import log_autoload_details
-from cloudshell.snmp.autoload.physical_entities_table import SnmpEntityTable
 from cloudshell.snmp.autoload.system_info_table import SnmpSystemInfo
-from cloudshell.snmp.autoload.trash.snmp_if_table import SnmpIfTable
 
 
 class GenericSNMPAutoload(object):

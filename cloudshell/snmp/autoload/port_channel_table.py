@@ -75,6 +75,33 @@ class PortsTable(object):
             self._get_if_entities()
         return self._if_port_channels_dict
 
+    def get_if_entity_by_index(self, if_index):
+        return self.if_ports.get(if_index) or self.if_port_channels.get(if_index)
+
+    def _get_if_entities(self):
+        self.load_snmp_tables()
+        for port_index, port_data in self._if_table.items():
+            port: SnmpIfEntity = self._if_entity(port_index, port_data)
+            if "." in port.port_name:
+                continue
+            if (
+                not self.PORT_EXCLUDE_RE.search(port.if_name.lower())
+                or not self.PORT_EXCLUDE_RE.search(port.if_descr_name.lower())
+            ) and self.PORT_VALID_TYPE.search(port.if_type):
+                self._add_port(port)
+            else:
+                pass
+            if (
+                self.PORT_CHANNEL_NAME
+                and any(
+                    port_channel
+                    for port_channel in self.PORT_CHANNEL_NAME
+                    if port_channel in port.port_name.lower()
+                )
+                or self.PORT_CHANNEL_VALID_TYPE.search(port.if_type)
+            ):
+                self._add_port_channel(port)
+
     def _add_port(self, port: SnmpIfEntity):
         port_object = self._resource_model.entities.Port(
             index=port.if_index, name=port.port_name.replace("/", "-")
