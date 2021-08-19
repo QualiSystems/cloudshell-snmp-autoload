@@ -1,8 +1,11 @@
-import functools
 import re
 
 from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.domain.entity.snmp_entity_base import BaseEntity
+from cloudshell.snmp.autoload.domain.entity.snmp_entity_element import (
+    Element,
+    PortElement,
+)
 from cloudshell.snmp.autoload.domain.entity.snmp_entity_struct import (
     Chassis,
     Module,
@@ -12,44 +15,6 @@ from cloudshell.snmp.autoload.domain.entity.snmp_entity_struct import (
 from cloudshell.snmp.autoload.helper.entity_quali_mib_table import EntityQualiMibTable
 from cloudshell.snmp.autoload.service.port_mapper import PortMappingService
 from cloudshell.snmp.autoload.service.port_parent_validator import PortParentValidator
-
-
-class Element(object):
-    def __init__(self, entity):
-        """Initialize Element.
-
-        :type entity: object
-        """
-        self.entity = entity
-        self.id = entity.position_id
-        self.child_list = []
-        self.parent = None
-        self._full_id = ""
-
-    def add_parent(self, parent):
-        self.parent = parent
-        parent.child_list.append(self)
-
-    @property
-    @functools.lru_cache()
-    def full_id(self):
-        if not self.parent:
-            return self.id
-        return f"{self.parent.full_id}/{self.id}"
-
-
-class PortElement(Element):
-    def __init__(self, entity, if_entity):
-        super(PortElement, self).__init__(entity)
-        self.if_entity = if_entity
-
-    @property
-    def port_name(self):
-        return (
-            self.if_entity.port_name
-            or self.entity.base_entity.name
-            or self.entity.base_entity.description
-        )
 
 
 class SnmpEntityTable(object):

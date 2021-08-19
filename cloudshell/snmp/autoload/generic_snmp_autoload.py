@@ -63,9 +63,8 @@ class GenericSNMPAutoload(object):
     def discover(
         self, supported_os, resource_model, validate_module_id_by_port_name=False
     ):
-        """General entry point for autoload.
-        Read device structure and attributes: chassis, modules, submodules, ports,
-        port-channels and power supplies
+        """General entry point for autoload. Read device structure and attributes: chassis, modules, submodules, ports, port-channels and power supplies.
+
         :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
         :param str supported_os:
         :param bool validate_module_id_by_port_name:
@@ -97,7 +96,6 @@ class GenericSNMPAutoload(object):
             filter_empty_modules=True, use_new_unique_id=True
         )
 
-
         log_autoload_details(self.logger, autoload_details)
         return autoload_details
 
@@ -122,6 +120,7 @@ class GenericSNMPAutoload(object):
 
     def _add_ports_from_iftable(self):
         """Get ports data.
+
         Get resource details and attributes for every port
         base on data from IF-MIB Table.
         """

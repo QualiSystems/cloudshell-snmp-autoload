@@ -13,8 +13,7 @@ class SnmpIfTable(object):
     IF_PORT_CHANNEL = SnmpIfPortChannel
     PORT_CHANNEL_NAME = ["port-channel", "bundle-ether"]  # ToDo remove it from here
     PORT_EXCLUDE_LIST = ["mgmt", "management", "loopback", "null", "."]
-    PORT_NAME_PATTERN = re.compile(r"((\d+/).+)")
-    PORT_NAME_SECONDARY_PATTERN = re.compile(r"\d+")
+
     PORT_VALID_TYPE = re.compile(
         r"ethernet|other|propPointToPointSerial|fastEther|opticalChannel|^otn",
         re.IGNORECASE,
@@ -40,6 +39,12 @@ class SnmpIfTable(object):
         if not self._if_port_dict:
             self._get_if_entities()
         return self._if_port_dict
+
+    @property
+    def _unmapped_ports(self):
+        if not self._unmapped_ports_list:
+            self._get_if_entities()
+        return self._unmapped_ports_list
 
     @property
     def if_port_channels(self):
@@ -109,41 +114,47 @@ class SnmpIfTable(object):
 
         self._logger.info("ifIndex table loaded")
 
-    def get_if_index_from_port_name(self, port_name, port_filter_pattern):
-        interface = self._get_by_port_name(port_name.lower())
-        if interface and interface.if_index in self._unmapped_ports_list:
+    def get_if_index_from_port_name(self, port, port_filter_pattern):
+        interface = self._get_by_port_name(port.base_entity.name.lower())
+        if not interface:
+            interface = self._get_by_port_name(port.base_entity.description.lower())
+        if interface and interface.if_index in self._unmapped_ports:
             self.remove_port_from_unmapped_list(interface.if_index)
             return interface
-        if_table_re = None
-        port_if_match = self.PORT_NAME_PATTERN.search(port_name)
-        if not port_if_match:
-            port_if_re = self.PORT_NAME_SECONDARY_PATTERN.findall(port_name)
-            if port_if_re:
-                if_table_re = "/".join(port_if_re)
-        else:
-            port_if_re = port_if_match.group()
-            if_table_re = port_if_re
-        if if_table_re:
-            port_pattern = re.compile(
-                r"^\S*\D*[^/]{0}(/\D+|$)".format(if_table_re), re.IGNORECASE
-            )
-            for interface_id in self._unmapped_ports_list:
-                interface = self.if_ports.get(interface_id)
-                if interface and not self.PORT_VALID_TYPE.search(interface.if_type):
-                    continue
-                if port_filter_pattern.search(str(interface.if_name)):
-                    continue
-                if interface.port_id == if_table_re:
-                    return interface
-                if port_pattern.search(interface.if_name) or port_pattern.search(
-                    interface.if_descr_name
-                ):
-                    self._unmapped_ports_list.remove(interface_id)
-                    return interface
+        for interface_id in self._unmapped_ports:
+            interface = self.if_ports.get(interface_id)
+            if interface and not self.PORT_VALID_TYPE.search(interface.if_type):
+                continue
+            if port_filter_pattern.search(str(interface.if_name)):
+                continue
+            if (
+                port.port_name_pattern
+                and port.port_name_pattern.search(interface.if_name)
+            ) or (
+                port.port_desc_pattern
+                and port.port_desc_pattern.search(interface.if_descr_name)
+            ):
+                self._unmapped_ports.remove(interface_id)
+                return interface
+            if (
+                port.port_name_id_pattern
+                and port.port_name_id_pattern.search(interface.if_name)
+            ) or (
+                port.port_desc_id_pattern
+                and port.port_desc_id_pattern.search(interface.if_descr_name)
+            ):
+                self._unmapped_ports.remove(interface_id)
+                return interface
+            if (
+                interface.port_id == port.port_name_id
+                or interface.port_id == port.port_desc_id
+            ):
+                self._unmapped_ports.remove(interface_id)
+                return interface
 
     def remove_port_from_unmapped_list(self, interface_id):
-        if interface_id in self._unmapped_ports_list:
-            self._unmapped_ports_list.remove(interface_id)
+        if interface_id in self._unmapped_ports:
+            self._unmapped_ports.remove(interface_id)
 
     def _get_by_port_name(self, name):
         return self._port_name_to_object_map.get(name)

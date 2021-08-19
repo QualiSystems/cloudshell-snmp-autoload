@@ -33,12 +33,10 @@ class PortMappingService(object):
     def get_mapping(self, port_entity):
         if_port = self.port_mapping_table.get(port_entity.base_entity.index)
         if not if_port:
-            if_port = self._get_mapping(port_entity.base_entity.name)
-            if not if_port:
-                if_port = self._get_mapping(port_entity.base_entity.description)
+            if_port = self._get_mapping(port_entity)
         return if_port
 
-    def _get_mapping(self, port_descr):
+    def _get_mapping(self, port_entity):
         """Get mapping from entPhysicalTable to ifTable.
 
         Build mapping based on ent_alias_mapping_table if exists else build manually
@@ -48,6 +46,6 @@ class PortMappingService(object):
         |        {entPhysicalTable index: ifTable index, ...}
         """
         port_if_entity = self._if_table.get_if_index_from_port_name(
-            port_descr, self.PORT_EXCLUDE_RE
+            port_entity, self.PORT_EXCLUDE_RE
         )
         return port_if_entity
