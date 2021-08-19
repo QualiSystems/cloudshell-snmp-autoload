@@ -261,15 +261,7 @@ class GenericSNMPAutoload(object):
 
     def _get_ports_attributes(self, port, parent_element):
         """Get resource details and attributes for every port in self.port_list."""
-<<<<<<< HEAD
         name = port.port_name
-=======
-        name = (
-            port.if_entity.port_name
-            or port.entity.base_entity.name
-            or port.entity.base_entity.description
-        )
->>>>>>> 7b4a7082ede58f943e8a5998083b9e02cdc085ef
         if not name:
             return
 
