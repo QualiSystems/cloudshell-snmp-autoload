@@ -28,6 +28,6 @@ class SnmpIfPortChannel(SnmpIfEntity):
         for key, value in self._port_attributes_snmp_tables.port_channel_ports.items():
             # Todo looks weird, requires rethink and update
             agg_id = value.get("dot3adAggPortAttachedAggID")
-            if agg_id and str(self.if_index) in agg_id:
+            if agg_id and agg_id.safe_value and str(self.if_index) == agg_id.safe_value:
                 result.append(key)
         return result

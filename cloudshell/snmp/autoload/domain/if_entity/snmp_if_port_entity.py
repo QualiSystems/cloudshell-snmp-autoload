@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 
 from cloudshell.snmp.autoload.constants.port_constants import (
     PORT_ADJACENT_REM_PORT_DESCR,
@@ -14,6 +15,7 @@ from cloudshell.snmp.autoload.domain.if_entity.snmp_if_entity import SnmpIfEntit
 class SnmpIfPort(SnmpIfEntity):
     IF_TYPE_REPLACE_PATTERN = re.compile("^[/']|[/']$")
     ADJACENT_TEMPLATE = "{remote_host} through {remote_port}"
+    PORT_IDS_PATTERN = re.compile(r"\d+(/\d+)*$", re.IGNORECASE)
 
     def __init__(
         self, snmp_handler, logger, port_name_response, port_attributes_snmp_tables
@@ -24,64 +26,52 @@ class SnmpIfPort(SnmpIfEntity):
         self._snmp = snmp_handler
         self._port_attributes_snmp_tables = port_attributes_snmp_tables
         self._logger = logger
-        self._if_type = None
-        self._if_speed = None
-        self._if_mtu = None
-        self._if_mac = None
-        self._adjacent = None
-        self._duplex = None
-        self._auto_neg = None
 
     @property
     def if_type(self):
-        if not self._if_type:
-            self._if_type = "other"
-            if_type = self._snmp.get_property(PORT_TYPE.get_snmp_mib_oid(self.if_index))
-            if if_type and if_type.safe_value:
-                self._if_type = if_type.safe_value.replace("'", "")
-        return self._if_type
+        if_type = "other"
+        _if_type = self._snmp.get_property(PORT_TYPE.get_snmp_mib_oid(self.if_index))
+        if _if_type and _if_type.safe_value:
+            if_type = _if_type.safe_value.replace("'", "")
+
+        return if_type
 
     @property
+    @lru_cache()
+    def port_id(self):
+        port_id = self.PORT_IDS_PATTERN.search(self.port_name)
+        if port_id:
+            return port_id.group()
+
+    @property
+    @lru_cache()
     def if_speed(self):
-        if not self._if_speed:
-            self._if_speed = (
-                self._snmp.get_property(PORT_SPEED.get_snmp_mib_oid(self.if_index)) or 0
-            )
-        return self._if_speed
+        return self._snmp.get_property(PORT_SPEED.get_snmp_mib_oid(self.if_index)) or 0
 
     @property
+    @lru_cache()
     def if_mtu(self):
-        if not self._if_mtu:
-            self._if_mtu = (
-                self._snmp.get_property(PORT_MTU.get_snmp_mib_oid(self.if_index)) or 0
-            )
-        return self._if_mtu
+        return self._snmp.get_property(PORT_MTU.get_snmp_mib_oid(self.if_index)) or 0
 
     @property
+    @lru_cache()
     def if_mac(self):
-        if not self._if_mac:
-            self._if_mac = self._snmp.get_property(
-                PORT_MAC.get_snmp_mib_oid(self.if_index)
-            )
-        return self._if_mac
+        return self._snmp.get_property(PORT_MAC.get_snmp_mib_oid(self.if_index))
 
     @property
+    @lru_cache()
     def adjacent(self):
-        if not self._adjacent:
-            self._adjacent = self._get_adjacent() or ""
-        return self._adjacent
+        return self._get_adjacent() or ""
 
     @property
+    @lru_cache()
     def duplex(self):
-        if not self._duplex:
-            self._duplex = self._get_duplex() or "Half"
-        return self._duplex
+        return self._get_duplex() or "Half"
 
     @property
+    @lru_cache()
     def auto_negotiation(self):
-        if not self._auto_neg:
-            self._auto_neg = self._get_auto_neg() or "False"
-        return self._auto_neg
+        return self._get_auto_neg() or "False"
 
     def _get_adjacent(self):
         """Get connected device interface and device name to the specified port id.

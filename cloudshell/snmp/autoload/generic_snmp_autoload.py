@@ -97,6 +97,7 @@ class GenericSNMPAutoload(object):
             filter_empty_modules=True, use_new_unique_id=True
         )
 
+
         log_autoload_details(self.logger, autoload_details)
         return autoload_details
 
@@ -197,7 +198,7 @@ class GenericSNMPAutoload(object):
     def _get_power_ports(self, power_port, parent_element):
         """Get attributes for power ports provided in self.power_supply_list.
 
-        :type power_port: object
+        :type power_port: cloudshell.snmp.autoload.snmp_entity_table.Element
         :return:
         """
         self.logger.debug("Building Power Port")
@@ -222,8 +223,11 @@ class GenericSNMPAutoload(object):
         if not self.if_table_service.if_port_channels:
             return
         self.logger.info("Building Port Channels")
-        for if_port_channel in self.if_table_service.if_port_channels:
-            interface_model = if_port_channel.if_name
+        for (
+            if_port_channel_id,
+            if_port_channel,
+        ) in self.if_table_service.if_port_channels.items():
+            interface_model = if_port_channel.port_name
             match_object = re.search(r"\d+$", interface_model)
             if match_object:
                 interface_id = "{0}".format(match_object.group(0))
@@ -257,7 +261,15 @@ class GenericSNMPAutoload(object):
 
     def _get_ports_attributes(self, port, parent_element):
         """Get resource details and attributes for every port in self.port_list."""
+<<<<<<< HEAD
         name = port.port_name
+=======
+        name = (
+            port.if_entity.port_name
+            or port.entity.base_entity.name
+            or port.entity.base_entity.description
+        )
+>>>>>>> 7b4a7082ede58f943e8a5998083b9e02cdc085ef
         if not name:
             return
 
