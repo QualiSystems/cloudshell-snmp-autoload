@@ -103,7 +103,7 @@ class GenericSNMPAutoload(object):
         for element in child_list:
             if isinstance(element.entity, SnmpEntityTable.ENTITY_CHASSIS):
                 chassis = self._get_chassis_attributes(element, parent)
-                self._chassis.update({str(element.entity.index): chassis})
+                self._chassis.update({str(element.entity.position_id): chassis})
                 self._build_structure(element.child_list, chassis)
 
             elif isinstance(element.entity, SnmpEntityTable.ENTITY_MODULE):
@@ -139,9 +139,13 @@ class GenericSNMPAutoload(object):
                     chassis_id = match.groupdict().get("ch_index")
                     if chassis_id not in self._chassis:
                         self._add_dummy_chassis(chassis_id)
-
-                    parent_element = self._chassis.get(chassis_id)
-                    self._get_ports_attributes(interface, parent_element)
+                else:
+                    chassis_id = next(iter(self._chassis))
+                    if not chassis_id:
+                        chassis_id = "0"
+                        self._add_dummy_chassis(chassis_id)
+                parent_element = self._chassis.get(chassis_id)
+                self._get_ports_attributes(interface, parent_element)
 
         self.logger.info("Building Ports completed")
 
