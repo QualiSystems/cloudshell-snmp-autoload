@@ -1,5 +1,10 @@
 import re
-from functools import lru_cache
+import sys
+
+if sys.version_info >= (3, 0):
+    from functools import lru_cache
+else:
+    from functools32 import lru_cache
 
 from cloudshell.snmp.autoload.constants.port_constants import (
     PORT_ADJACENT_REM_PORT_DESCR,
