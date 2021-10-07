@@ -1,11 +1,6 @@
 import re
 import sys
 
-if sys.version_info >= (3, 0):
-    from functools import lru_cache
-else:
-    from functools32 import lru_cache
-
 from cloudshell.snmp.autoload.constants.port_constants import (
     PORT_ADJACENT_REM_PORT_DESCR,
     PORT_AUTO_NEG,
@@ -15,6 +10,11 @@ from cloudshell.snmp.autoload.constants.port_constants import (
     PORT_TYPE,
 )
 from cloudshell.snmp.autoload.domain.if_entity.snmp_if_entity import SnmpIfEntity
+
+if sys.version_info >= (3, 0):
+    from functools import lru_cache
+else:
+    from functools32 import lru_cache
 
 
 class SnmpIfPort(SnmpIfEntity):

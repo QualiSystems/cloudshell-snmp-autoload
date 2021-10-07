@@ -1,10 +1,4 @@
 import sys
-
-if sys.version_info >= (3, 0):
-    from functools import lru_cache
-else:
-    from functools32 import lru_cache
-
 from ipaddress import IPv4Address, IPv6Address
 
 from cloudshell.snmp.autoload.constants.port_constants import (
@@ -12,6 +6,11 @@ from cloudshell.snmp.autoload.constants.port_constants import (
     PORT_DESCRIPTION,
     PORT_NAME,
 )
+
+if sys.version_info >= (3, 0):
+    from functools import lru_cache
+else:
+    from functools32 import lru_cache
 
 
 class SnmpIfEntity(object):
