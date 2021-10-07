@@ -1,3 +1,5 @@
+import re
+
 from cloudshell.snmp.autoload.constants.entity_constants import (
     ENTITY_HW_VERSION,
     ENTITY_OS_VERSION,
@@ -72,9 +74,53 @@ class PowerPort(BaseModuleEntity):
 
 
 class Port(BaseModuleEntity):
+    ENTITY_PORT_NAME_PATTERN = re.compile(r"((\d+/).+)")
+    ENTITY_PORT_ID_PATTERN = re.compile(r"\d+")
+    PORT_NAME_TEMPLATE = r"^\S*\D*[^/]{0}(/\D+|$)"
+
     def __init__(self, base_entity):
         super(Port, self).__init__(base_entity)
         self._alias_mapping = None
+
+    @property
+    def port_name_pattern(self):
+        port_if_match = self.ENTITY_PORT_NAME_PATTERN.search(self.base_entity.name)
+        if port_if_match:
+            name = port_if_match.group()
+            return re.compile(self.PORT_NAME_TEMPLATE.format(name), re.IGNORECASE)
+
+    @property
+    def port_desc_pattern(self):
+        port_if_match = self.ENTITY_PORT_NAME_PATTERN.search(
+            self.base_entity.description
+        )
+        if port_if_match:
+            name = port_if_match.group()
+            return re.compile(self.PORT_NAME_TEMPLATE.format(name), re.IGNORECASE)
+
+    @property
+    def port_name_id(self):
+        port_if_re = self.ENTITY_PORT_ID_PATTERN.findall(self.base_entity.name)
+        if port_if_re:
+            return "/".join(port_if_re)
+
+    @property
+    def port_desc_id(self):
+        port_if_re = self.ENTITY_PORT_ID_PATTERN.findall(self.base_entity.description)
+        if port_if_re:
+            return "/".join(port_if_re)
+
+    @property
+    def port_name_id_pattern(self):
+        port_id = self.port_name_id
+        if port_id:
+            return re.compile(self.PORT_NAME_TEMPLATE.format(port_id), re.IGNORECASE)
+
+    @property
+    def port_desc_id_pattern(self):
+        port_id = self.port_desc_id
+        if port_id:
+            return re.compile(self.PORT_NAME_TEMPLATE.format(port_id), re.IGNORECASE)
 
     @property
     def alias_mapping(self):

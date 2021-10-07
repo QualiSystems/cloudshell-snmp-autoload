@@ -1,6 +1,8 @@
 import re
 from collections import OrderedDict
 
+from cloudshell.snmp.core.domain.snmp_oid import SnmpMibObject
+
 from cloudshell.snmp.autoload.core.snmp_oid_template import SnmpMibOidTemplate
 
 ENTITY_VALID_CLASS_PATTERN = re.compile(
@@ -17,15 +19,16 @@ ENTITY_MODEL = SnmpMibOidTemplate("ENTITY-MIB", "entPhysicalModelName")
 ENTITY_SERIAL = SnmpMibOidTemplate("ENTITY-MIB", "entPhysicalSerialNum")
 ENTITY_OS_VERSION = SnmpMibOidTemplate("ENTITY-MIB", "entPhysicalSoftwareRev")
 ENTITY_HW_VERSION = SnmpMibOidTemplate("ENTITY-MIB", "entPhysicalHardwareRev")
-ENTITY_TO_IF_ID = SnmpMibOidTemplate("ENTITY-MIB", "entAliasMappingIdentifier")
+# ENTITY_TO_IF_ID = SnmpMibOidTemplate("ENTITY-MIB", "entAliasMappingIdentifier") # noqa: E501
+ENTITY_TO_IF_ID = SnmpMibObject("ENTITY-MIB", "entAliasMappingIdentifier")
 
 ENTITY_VENDOR_TYPE_TO_CLASS_MAP = OrderedDict(
     [
-        (re.compile(r"^\S+container"), "container"),
-        (re.compile(r"^\S+chassis"), "chassis"),
-        (re.compile(r"^\S+module"), "module"),
-        (re.compile(r"^\S+port"), "port"),
-        (re.compile(r"^\S+powersupply"), "powerSupply"),
+        (re.compile(r"^\S+container", re.IGNORECASE), "container"),
+        (re.compile(r"^\S+chassis", re.IGNORECASE), "chassis"),
+        (re.compile(r"^\S+module", re.IGNORECASE), "module"),
+        (re.compile(r"^\S+port", re.IGNORECASE), "port"),
+        (re.compile(r"^\S+powersupply", re.IGNORECASE), "powerSupply"),
     ]
 )
 
