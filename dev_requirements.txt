@@ -1,7 +1,4 @@
 pre-commit
 tox
-tox-factor
 -r test_requirements.txt
-
--e git+https://github.com/QualiSystems/cloudshell-snmp.git@dev#egg=cloudshell-snmp
-functools32; python_version <= '2.7'
+-r requirements.txt
