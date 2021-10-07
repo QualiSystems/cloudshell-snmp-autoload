@@ -1,7 +1,12 @@
 import re
-from functools import lru_cache
+import sys
 
 from cloudshell.snmp.autoload.constants.entity_constants import ENTITY_TO_IF_ID
+
+if sys.version_info >= (3, 0):
+    from functools import lru_cache
+else:
+    from functools32 import lru_cache
 
 
 class PortMappingService(object):
