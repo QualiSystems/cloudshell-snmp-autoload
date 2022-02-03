@@ -140,7 +140,7 @@ class GenericSNMPAutoload(object):
                     if chassis_id not in self._chassis:
                         self._add_dummy_chassis(chassis_id)
                 else:
-                    chassis_id = next(iter(self._chassis))
+                    chassis_id = next(iter(self._chassis), None)
                     if not chassis_id:
                         chassis_id = "0"
                         self._add_dummy_chassis(chassis_id)
