@@ -1,6 +1,11 @@
 import re
 
 from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
+from cloudshell.snmp.autoload.domain.entity.snmp_entity_base import BaseEntity
+from cloudshell.snmp.autoload.domain.entity.snmp_entity_element import (
+    Element,
+    PortElement,
+)
 from cloudshell.snmp.autoload.domain.entity.snmp_entity_struct import (
     Chassis,
     Module,
@@ -10,36 +15,6 @@ from cloudshell.snmp.autoload.domain.entity.snmp_entity_struct import (
 from cloudshell.snmp.autoload.helper.entity_quali_mib_table import EntityQualiMibTable
 from cloudshell.snmp.autoload.service.port_mapper import PortMappingService
 from cloudshell.snmp.autoload.service.port_parent_validator import PortParentValidator
-
-
-class Element(object):
-    def __init__(self, entity):
-        """Initialize Element.
-
-        :type entity: object
-        """
-        self.entity = entity
-        self.id = entity.position_id
-        self.child_list = []
-        self.parent = None
-
-    def add_parent(self, parent):
-        self.parent = parent
-        parent.child_list.append(self)
-
-
-class PortElement(Element):
-    def __init__(self, entity, if_entity):
-        super(PortElement, self).__init__(entity)
-        self.if_entity = if_entity
-
-    @property
-    def port_name(self):
-        return (
-            self.if_entity.port_name
-            or self.entity.base_entity.name
-            or self.entity.base_entity.description
-        )
 
 
 class SnmpEntityTable(object):
@@ -80,7 +55,7 @@ class SnmpEntityTable(object):
     def port_mapping_service(self):
         if not self._port_mapping_service:
             self._port_mapping_service = PortMappingService(
-                self._if_table_service, self._logger
+                self._snmp, self._if_table_service, self._logger
             )
         return self._port_mapping_service
 
@@ -98,7 +73,7 @@ class SnmpEntityTable(object):
 
     def _load_port(self, entity):
         port = self.port_mapping_service.get_mapping(entity)
-        if not port or port.if_name in self._port_dict:
+        if not port or port.port_name in self._port_dict:
             return
 
         port_element = PortElement(entity, port)
@@ -114,6 +89,7 @@ class SnmpEntityTable(object):
                 break
 
             parent_id = entity.parent_id
+            # ToDo check for 0
             entity = self._raw_physical_indexes.get(parent_id)
             if not entity:
                 if not parent_id == "0":
@@ -144,7 +120,7 @@ class SnmpEntityTable(object):
         self._validate_modules_structure(port_element)
         if self.validate_module_id_by_port_name:
             self.port_parent_validator_service.validate_port_parent_ids(port_element)
-        self._port_dict[port_element.if_entity.if_name] = port_element
+        self._port_dict[port_element.if_entity.port_name] = port_element
 
     def _load_power_port(self, entity):
         element = Element(entity)
@@ -180,12 +156,12 @@ class SnmpEntityTable(object):
 
         index_list = self._raw_physical_indexes.raw_entity_indexes
         try:
-            index_list.sort(key=lambda k: int(k), reverse=True)
+            index_list.sort(key=lambda k: int(k.index), reverse=True)
         except ValueError:
             self._logger.error("Failed to load snmp entity table!", exc_info=1)
             raise GeneralAutoloadError("Failed to load snmp entity table.")
-        for key in index_list:
-            entity = self._raw_physical_indexes.get(key)
+        for entity_index in index_list:
+            entity = BaseEntity(self._snmp, entity_index)
             if "port" in entity.entity_class:
                 if self.port_exclude_pattern:
                     invalid_port = self.port_exclude_pattern.search(
@@ -196,11 +172,16 @@ class SnmpEntityTable(object):
                 self._load_port(self.ENTITY_PORT(entity))
             elif "powersupply" in entity.entity_class.lower():
                 self._load_power_port(self.ENTITY_POWER_PORT(entity))
+            elif "chassis" in entity.entity_class.lower():
+                if entity.index not in self._chassis_dict:
+                    chassis = Element(self.ENTITY_CHASSIS(entity))
+                    self._chassis_dict[entity.index] = chassis
 
     def _validate_modules_structure(self, port):
         port_parent_list = self._get_port_parent_modules_list(port)
         if len(port_parent_list) > 2:
             port_parent_list[1].child_list.append(port)
+            port.parent = port_parent_list[1]
 
     def _get_port_parent_modules_list(self, port):
         """Get port parent modules list.
@@ -212,4 +193,5 @@ class SnmpEntityTable(object):
         while entity_element and entity_element not in self._chassis_dict.values():
             result.append(entity_element)
             entity_element = entity_element.parent
+        result.reverse()
         return result
