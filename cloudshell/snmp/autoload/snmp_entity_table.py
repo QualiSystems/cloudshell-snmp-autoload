@@ -173,7 +173,11 @@ class SnmpEntityTable(object):
             elif "powersupply" in entity.entity_class.lower():
                 self._load_power_port(self.ENTITY_POWER_PORT(entity))
             elif "chassis" in entity.entity_class.lower():
-                if entity.index not in self._chassis_dict:
+                if entity.index not in self._chassis_dict and not any(
+                    x
+                    for x in self._chassis_dict.values()
+                    if x.entity.position_id == entity.position_id
+                ):
                     chassis = Element(self.ENTITY_CHASSIS(entity))
                     self._chassis_dict[entity.index] = chassis
 

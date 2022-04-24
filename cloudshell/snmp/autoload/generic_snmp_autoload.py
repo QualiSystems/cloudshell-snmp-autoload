@@ -129,23 +129,26 @@ class GenericSNMPAutoload(object):
         for if_index, interface in self.if_table_service.if_ports.items():
             if self.if_table_service.PORT_VALID_TYPE.search(interface.if_type):
                 self.logger.debug("Trying to load port {}:".format(interface.port_name))
-                match = re.search(
-                    r"(?P<ch_index>\d+)(/\d+)*/(?P<if_index>\d+)$",
-                    interface.if_descr_name,
-                    re.IGNORECASE,
-                )
+                if not self._chassis:
+                    chassis_id = "0"
+                    self._add_dummy_chassis(chassis_id)
+                parent_element = next(iter(self._chassis.values()))
+                if len(self._chassis) > 1:
+                    match = re.search(
+                        r"(?P<ch_index>\d+)(/\d+)*/(?P<if_index>\d+)$",
+                        interface.if_descr_name,
+                        re.IGNORECASE,
+                    )
 
-                if match:
-                    chassis_id = match.groupdict().get("ch_index")
-                    if chassis_id not in self._chassis:
-                        self._add_dummy_chassis(chassis_id)
-                else:
-                    chassis_id = next(iter(self._chassis), None)
-                    if not chassis_id:
-                        chassis_id = "0"
-                        self._add_dummy_chassis(chassis_id)
-                parent_element = self._chassis.get(chassis_id)
-                self._get_ports_attributes(interface, parent_element)
+                    if match:
+                        chassis_id = match.groupdict().get("ch_index")
+                        if chassis_id not in self._chassis:
+                            self._add_dummy_chassis(chassis_id)
+                            parent_element = self._chassis[chassis_id]
+                        else:
+                            parent_element = self._chassis.get(chassis_id, None)
+                if parent_element:
+                    self._get_ports_attributes(interface, parent_element)
 
         self.logger.info("Building Ports completed")
 
