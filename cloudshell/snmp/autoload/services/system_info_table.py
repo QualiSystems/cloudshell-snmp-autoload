@@ -1,11 +1,10 @@
 import re
 
 from cloudshell.shell.flows.autoload.autoload_utils import get_device_name
+from cloudshell.snmp.autoload.snmp.helper.snmpv2_data import SnmpV2MibData
 
-from cloudshell.snmp.autoload.helper.snmpv2_data import SnmpV2MibData
 
-
-class SnmpSystemInfo(object):
+class SnmpSystemInfo:
     DEVICE_MODEL_PATTERN = re.compile(r"::(?P<model>\S+$)")
     VENDOR_OID_PATTERN = re.compile(r"1.3.6.1.4.1.\d+")
     OS_VERSION_PATTERN = re.compile(r"Version (?P<os_version>[^\s,]+)")
@@ -53,9 +52,7 @@ class SnmpSystemInfo(object):
             )
 
         system_description = self._snmp_v2_obj.get_system_description()
-        self._logger.debug(
-            "Detected system description: '{0}'".format(system_description)
-        )
+        self._logger.debug(f"Detected system description: '{system_description}'")
         if system_description:
             result = supported_os_pattern.search(str(system_description))
 
@@ -63,7 +60,7 @@ class SnmpSystemInfo(object):
                 return True
             else:
                 error_message = (
-                    "Incompatible driver! Please use this driver for '{0}' "
+                    "Incompatible driver! Please use this driver for '{}' "
                     "operation system(s)".format(supported_os_pattern.pattern)
                 )
         else:
@@ -132,7 +129,7 @@ class SnmpSystemInfo(object):
         resource.vendor = vendor
 
         raw_model = self._get_device_model()
-        model = re.sub(r"^{}".format(vendor), "", raw_model, flags=re.IGNORECASE)
+        model = re.sub(rf"^{vendor}", "", raw_model, flags=re.IGNORECASE)
         resource.model = model
         resource.model_name = self._get_model_name(raw_model)
 

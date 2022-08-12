@@ -1,7 +1,7 @@
 from cloudshell.snmp.autoload.constants import snmpv_v2_constants
 
 
-class SnmpV2MibData(object):
+class SnmpV2MibData:
     def __init__(self, snmp_handler, logger):
         self._snmp_handler = snmp_handler
         self._logger = logger

@@ -14,7 +14,7 @@ from cloudshell.snmp.autoload.constants.entity_constants import (
 )
 
 
-class BaseEntity(object):
+class BaseEntity:
     def __init__(self, index, entity_row_response):
         self.index = index
         self.entity_row_response = entity_row_response
@@ -28,27 +28,33 @@ class BaseEntity(object):
 
     @property
     def position_id(self):
-        return self.entity_row_response.get(ENTITY_POSITION.object_name).safe_value
+        result = self.entity_row_response.get(ENTITY_POSITION.object_name)
+        return result.safe_value if result else ""
 
     @property
     def os_version(self):
-        return self.entity_row_response.get(ENTITY_OS_VERSION.object_name).safe_value
+        result = self.entity_row_response.get(ENTITY_OS_VERSION.object_name)
+        return result.safe_value if result else ""
 
     @property
     def hw_version(self):
-        return self.entity_row_response.get(ENTITY_HW_VERSION.object_name).safe_value
+        result = self.entity_row_response.get(ENTITY_HW_VERSION.object_name)
+        return result.safe_value if result else ""
 
     @property
     def description(self):
-        return self.entity_row_response.get(ENTITY_DESCRIPTION.object_name).safe_value
+        result = self.entity_row_response.get(ENTITY_DESCRIPTION.object_name)
+        return result.safe_value if result else ""
 
     @property
     def name(self):
-        return self.entity_row_response.get(ENTITY_NAME.object_name).safe_value
+        result = self.entity_row_response.get(ENTITY_NAME.object_name)
+        return result.safe_value if result else ""
 
     @property
     def parent_id(self):
-        return self.entity_row_response.get(ENTITY_PARENT_ID.object_name).safe_value
+        result = self.entity_row_response.get(ENTITY_PARENT_ID.object_name)
+        return result.safe_value if result else ""
 
     @property
     def entity_class(self):
@@ -58,21 +64,25 @@ class BaseEntity(object):
 
     @property
     def vendor_type(self):
-        return self.entity_row_response.get(ENTITY_VENDOR_TYPE.object_name).safe_value
+        result = self.entity_row_response.get(ENTITY_VENDOR_TYPE.object_name)
+        return result.safe_value if result else ""
 
     @property
     def model(self):
-        return self.entity_row_response.get(ENTITY_MODEL.object_name).safe_value
+        result = self.entity_row_response.get(ENTITY_MODEL.object_name)
+        return result.safe_value if result else ""
 
     @property
     def serial_number(self):
-        return self.entity_row_response.get(ENTITY_SERIAL.object_name).safe_value
+        result = self.entity_row_response.get(ENTITY_SERIAL.object_name)
+
+        return result.safe_value if result else ""
 
     def _get_physical_class(self):
         if ENTITY_TO_CONTAINER_PATTERN.search(self.vendor_type):
             return "container"
-        entity_class = self.entity_row_response.get(ENTITY_CLASS.object_name).safe_value
-
+        entity_class_response = self.entity_row_response.get(ENTITY_CLASS.object_name)
+        entity_class = entity_class_response.safe_value if entity_class_response else ""
         if not entity_class or "other" in entity_class:
             if not self.vendor_type:
                 return ""

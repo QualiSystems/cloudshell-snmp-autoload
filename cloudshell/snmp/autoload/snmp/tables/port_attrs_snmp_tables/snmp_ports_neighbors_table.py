@@ -3,12 +3,11 @@ from collections import defaultdict
 from logging import Logger
 from threading import Thread
 
-from cloudshell.snmp.core.snmp_service import SnmpService
-
 from cloudshell.snmp.autoload.constants import port_constants
-from cloudshell.snmp.autoload.snmp_tables.port_attributes_snmp_tables.snmp_service_interface import (
+from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_interface import (
     PortAttributesServiceInterface,
 )
+from cloudshell.snmp.core.snmp_service import SnmpService
 
 
 class PortNeighbours(PortAttributesServiceInterface):
@@ -18,6 +17,7 @@ class PortNeighbours(PortAttributesServiceInterface):
     LLDP_LOC_NETWORK_ADDR = "networkaddress"
     LLDP_LOC_MAC_ADDR = "macaddress"
     LLDP_LOC_INTERFACE_ALIAS = "interfacealias"
+    PORT_NAME_PATTERN = r"{name}\b"
 
     def __init__(self, snmp_service: SnmpService, logger: Logger):
         self._snmp = snmp_service
@@ -27,6 +27,11 @@ class PortNeighbours(PortAttributesServiceInterface):
         self._lldp_loc_snmp_table = {}
         self._lldp_rem_snmp_table = {}
         self._thread_list = []
+
+    def _port_match(self, port_name, port_search):
+        return re.search(
+            self.PORT_NAME_PATTERN.format(name=port_name), port_search, re.IGNORECASE
+        )
 
     def load_snmp_tables(self):
         self._lldp_loc_snmp_table = self._snmp.get_multiple_columns(
@@ -53,7 +58,8 @@ class PortNeighbours(PortAttributesServiceInterface):
                 )
                 index = index_match.group().strip(".")
                 lldp_rem_table[index] = self.ADJACENT_TEMPLATE.format(
-                    remote_host=remote_sys_name, remote_port=remote_port_name,
+                    remote_host=remote_sys_name,
+                    remote_port=remote_port_name,
                 )
         if not lldp_rem_table:
             return
@@ -90,8 +96,6 @@ class PortNeighbours(PortAttributesServiceInterface):
         :return: device's name and port connected to port id
         :rtype string
         """
-        map(lambda thread: thread.join, self._thread_list)
-
         if self.LLDP_LOC_INTERFACE_NAME in self._adjacent_table:
             result = self._adjacent_table.get(self.LLDP_LOC_INTERFACE_NAME, {}).get(
                 port_object.name
@@ -124,9 +128,25 @@ class PortNeighbours(PortAttributesServiceInterface):
                     return result
         for lldp_data in self._adjacent_table.values():
             for lldp_rem_key, lldp_rem_data in lldp_data.items():
-                if lldp_rem_data not in self._used_adjacent_entries and (
-                    lldp_rem_key == port_object.port_description
-                    or lldp_rem_key.startswith(port_object.port_description)
-                ):
+                if self.check_port_name(lldp_rem_key, lldp_rem_data, port_object):
                     self._used_adjacent_entries.append(lldp_rem_data)
                     return lldp_rem_data
+
+    def check_port_name(self, lldp_rem_key, lldp_rem_data, port_object):
+        lldp_port_name = lldp_rem_key.replace("/", "-")
+        port_desc = ""
+        port_name = ""
+        if port_object:
+            if port_object.port_description:
+                port_desc = port_object.port_description
+            if port_object.name:
+                port_name = port_object.name
+        if lldp_rem_data not in self._used_adjacent_entries:
+            if lldp_port_name == port_desc or (
+                port_desc and self._port_match(port_desc, lldp_port_name)
+            ):
+                return True
+            if lldp_port_name == port_name or (
+                port_name and self._port_match(port_name, lldp_port_name)
+            ):
+                return True

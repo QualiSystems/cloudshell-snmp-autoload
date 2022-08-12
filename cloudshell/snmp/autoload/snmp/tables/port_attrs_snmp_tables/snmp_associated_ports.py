@@ -1,12 +1,11 @@
 from collections import defaultdict
 from logging import Logger
 
-from cloudshell.snmp.core.snmp_service import SnmpService
-
 from cloudshell.snmp.autoload.constants import port_constants
-from cloudshell.snmp.autoload.snmp_tables.port_attributes_snmp_tables.snmp_service_interface import (
+from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_interface import (
     PortAttributesServiceInterface,
 )
+from cloudshell.snmp.core.snmp_service import SnmpService
 
 
 class PortChannelsAssociatedPorts(PortAttributesServiceInterface):
@@ -28,4 +27,7 @@ class PortChannelsAssociatedPorts(PortAttributesServiceInterface):
                 self._associated_ports[port_channel_id.safe_value].append(index)
 
     def set_port_attributes(self, port_index):
+        return self._associated_ports.get(port_index)
+
+    def get_associated_ports(self, port_index):
         return self._associated_ports.get(port_index)

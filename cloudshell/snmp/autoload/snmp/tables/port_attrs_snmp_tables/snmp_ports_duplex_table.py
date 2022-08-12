@@ -1,11 +1,10 @@
 from logging import Logger
 
-from cloudshell.snmp.core.snmp_service import SnmpService
-
 from cloudshell.snmp.autoload.constants import port_constants
-from cloudshell.snmp.autoload.snmp_tables.port_attributes_snmp_tables.snmp_service_interface import (
+from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_interface import (
     PortAttributesServiceInterface,
 )
+from cloudshell.snmp.core.snmp_service import SnmpService
 
 
 class PortDuplex(PortAttributesServiceInterface):

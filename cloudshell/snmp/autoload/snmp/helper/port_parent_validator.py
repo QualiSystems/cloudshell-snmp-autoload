@@ -1,7 +1,7 @@
 import re
 
 
-class PortParentValidator(object):
+class PortParentValidator:
     MIN_PORT_ID_LENGTH = 3  # Skipping Port names with less then 3 digits
 
     def __init__(self, logger):
@@ -9,11 +9,11 @@ class PortParentValidator(object):
 
     def validate_port_parent_ids(self, port):
         name = port.if_entity.if_name or port.if_entity.if_descr_name
-        self._logger.debug("Start port {} parent modules id validation".format(name))
+        self._logger.debug(f"Start port {name} parent modules id validation")
         parent_ids = port.parent.full_id  # ["0", "11"]
         parent_ids_list = parent_ids.split("/")
         if re.search(parent_ids, name, re.IGNORECASE):
-            self._logger.debug("Port {} parent modules ids are valid.".format(name))
+            self._logger.debug(f"Port {name} parent modules ids are valid.")
             return
         else:
             parent_ids_from_port_match = re.search(r"\d+(/\d+)*$", name, re.IGNORECASE)
@@ -29,7 +29,7 @@ class PortParentValidator(object):
 
                     self._set_port_parent_ids(port, parent_ids_from_port_list)
                     self._logger.debug(
-                        "Completed port {} parent modules id validation".format(name)
+                        f"Completed port {name} parent modules id validation"
                     )
                 else:
                     self._logger.debug(

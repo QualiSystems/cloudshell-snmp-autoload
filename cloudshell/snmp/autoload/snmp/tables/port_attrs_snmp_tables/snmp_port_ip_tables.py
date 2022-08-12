@@ -3,12 +3,11 @@ from ipaddress import AddressValueError, IPv4Address, IPv6Address
 from logging import Logger
 from threading import Thread
 
-from cloudshell.snmp.core.snmp_service import SnmpService
-
 from cloudshell.snmp.autoload.constants import port_constants
-from cloudshell.snmp.autoload.snmp_tables.port_attributes_snmp_tables.snmp_service_interface import (
+from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_interface import (
     PortAttributesServiceInterface,
 )
+from cloudshell.snmp.core.snmp_service import SnmpService
 
 
 class PortIPTables(PortAttributesServiceInterface):
@@ -26,19 +25,28 @@ class PortIPTables(PortAttributesServiceInterface):
         self._ipv4_snmp_table = self._snmp.walk(port_constants.PORT_OLD_IP_INDEXES)
         if self._ipv4_snmp_table:
             self._thread_list.append(
-                Thread(target=self._convert_ipv4_table, name="IPv4 converter",)
+                Thread(
+                    target=self._convert_ipv4_table,
+                    name="IPv4 converter",
+                )
             )
         self._ip_mixed_snmp_table = self._snmp.walk(
             port_constants.PORT_MIXED_IP_INDEXES
         )
         if self._ip_mixed_snmp_table:
             self._thread_list.append(
-                Thread(target=self._convert_ip_mixed_table, name="Mixed IPs converter",)
+                Thread(
+                    target=self._convert_ip_mixed_table,
+                    name="Mixed IPs converter",
+                )
             )
         self._ipv6_snmp_table = self._snmp.walk(port_constants.PORT_MIXED_IPV6_INDEXES)
         if self._ipv6_snmp_table:
             self._thread_list.append(
-                Thread(target=self._convert_ipv6_table, name="IPv6 converter",)
+                Thread(
+                    target=self._convert_ipv6_table,
+                    name="IPv6 converter",
+                )
             )
         map(lambda thread: thread.start, self._thread_list)
 

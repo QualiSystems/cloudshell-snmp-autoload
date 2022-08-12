@@ -106,3 +106,5 @@ venv.bak/
 
 .idea/
 /int_tests
+
+/tests/cloudshell/snmp/autoload/test_generic_snmp_autoload.py

@@ -19,10 +19,6 @@ class SnmpIfEntity:
     def __init__(self, port_index, port_row):
         self.if_index = port_index
         self._if_table_row = port_row
-        self._if_alias = None
-        self._if_name = None
-        self._if_descr_name = None
-        self._ips_list = None
 
     @property
     @lru_cache()
@@ -32,20 +28,27 @@ class SnmpIfEntity:
     @property
     @lru_cache()
     def if_name(self):
-        return self._if_table_row.get(PORT_NAME.object_name).safe_value
+        result = self._if_table_row.get(PORT_NAME.object_name)
+        return result.safe_value if result else ""
 
     @property
     def if_descr_name(self):
-        return self._if_table_row.get(PORT_DESCR_NAME.object_name).safe_value
+        result = self._if_table_row.get(PORT_DESCR_NAME.object_name)
+        return result.safe_value if result else ""
 
     @property
     def if_port_description(self):
-        return self._if_table_row.get(PORT_DESCRIPTION.object_name).safe_value
+        result = self._if_table_row.get(PORT_DESCRIPTION.object_name)
+        if result:
+            return result.safe_value
 
     @property
     def if_type(self):
-        if_type = self._if_table_row.get(PORT_TYPE.object_name,).safe_value or "other"
-        return if_type.strip("'")
+        if_type = self._if_table_row.get(PORT_TYPE.object_name)
+        result = "other"
+        if if_type:
+            result = if_type.safe_value.strip("'")
+        return result
 
     @property
     @lru_cache()
@@ -57,14 +60,19 @@ class SnmpIfEntity:
     @property
     @lru_cache()
     def if_speed(self):
-        return self._if_table_row.get(PORT_SPEED.object_name).safe_value
+        result = self._if_table_row.get(PORT_SPEED.object_name)
+        return result.safe_value if result else ""
 
     @property
     @lru_cache()
     def if_mtu(self):
-        return self._if_table_row.get(PORT_MTU.object_name).safe_value
+        result = self._if_table_row.get(PORT_MTU.object_name)
+        if result:
+            return result.safe_value
 
     @property
     @lru_cache()
     def if_mac(self):
-        return self._if_table_row.get(PORT_MAC.object_name).safe_value
+        result = self._if_table_row.get(PORT_MAC.object_name)
+        if result:
+            return result.safe_value
