@@ -6,7 +6,7 @@ class ModuleHelper:
 
     def attach_port_to_parent(self, entity_port, if_port, port_id):
         parent = self._physical_table_service.get_port_parent_entity(entity_port)
-        parent = self._detect_and_connect_parent(parent)
+        parent = self.detect_and_connect_parent(parent)
         if parent:
             if (
                 len(port_id.split("-")) - len(str(parent.relative_address).split("/"))
@@ -56,7 +56,7 @@ class ModuleHelper:
             else:
                 parent.relative_address.native_index = port_ids[0]
 
-    def _detect_and_connect_parent(self, entity):
+    def detect_and_connect_parent(self, entity):
         parent = self._physical_table_service.get_parent_entity(entity)
         if parent and entity not in parent.extract_sub_resources():
             if "module" in parent.name.lower():

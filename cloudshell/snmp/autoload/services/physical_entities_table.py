@@ -249,7 +249,7 @@ class PhysicalTable:
                     f"{chassis}-{port_parent_id}"
                 )
                 if parent:
-                    return parent
+                    return parent[0]
         if self.physical_modules_ids_dict:
             module_id = port_ids
             ids = port_ids.split("-")

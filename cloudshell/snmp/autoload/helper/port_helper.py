@@ -33,7 +33,8 @@ class PortHelper:
             phys_port = self._physical_table_service.physical_structure_table.get(
                 phys_port_index
             )
-            if not self._is_valid_port(phys_port):
+            phys_port_entity = self._physical_table_service.load_entity(phys_port_index)
+            if not self._is_valid_port(phys_port_entity):
                 continue
             if_port = self._port_table_service.ports_dict.get(if_index)
             port_if_entity = self._port_table_service.load_if_port(if_index)
@@ -70,6 +71,7 @@ class PortHelper:
             parent = self._port_id_to_module_map.get(port_ids)
             if parent:
                 parent.connect_port(interface)
+                self.identified_ports.append(if_index)
                 continue
             if self._physical_table_service.physical_ports_list:
                 entity_port = self._port_mapping_table_service.get_mapping(
@@ -97,22 +99,20 @@ class PortHelper:
 
     def _guess_port_parent(self, if_index, interface):
         port_if_entity = self._port_table_service.load_if_port(if_index)
-        port_id = port_if_entity.port_id
-        port_ids = port_id[: port_id.rfind("-")]
+        port_ids = port_if_entity.port_id
         parent = self._physical_table_service.get_parent_entity_by_ids(port_ids)
         if parent:
             parent.connect_port(interface)
+            self._module_helper.detect_and_connect_parent(parent)
             self._port_id_to_module_map[port_ids] = parent
         else:
-            self._add_port_to_chassis(interface, port_id)
+            self._add_port_to_chassis(interface, port_ids)
 
     def _is_valid_port(self, entity_port):
         result = True
         if self._port_table_service.is_wrong_port(entity_port.name):
             result = False
-        if entity_port.port_description and self._port_table_service.is_wrong_port(
-            entity_port.port_description
-        ):
+        if self._port_table_service.is_wrong_port(entity_port.description):
             result = False
         return result
 
