@@ -1,4 +1,3 @@
-import re
 from functools import lru_cache
 
 from cloudshell.shell.standards.autoload_generic_models import GenericChassis
@@ -44,6 +43,7 @@ class GenericSNMPAutoload:
         self._port_mapping_service = None
         self._port_parent_ids_to_module_map = {}
         self._port_id_to_module_map = {}
+        self._identified_ports = []
 
     @property
     @lru_cache()
@@ -170,119 +170,169 @@ class GenericSNMPAutoload:
         Get resource details and attributes for every port
         base on data from IF-MIB Table.
         """
-        identified_ports = []
-
         self.logger.info("Loading Ports ...")
         if self.port_table_service.ports_dict:
             if self.port_snmp_mapping_table:
-                for (
-                    if_index,
-                    phys_port_index,
-                ) in self.port_snmp_mapping_table.port_mapping_snmp_table.items():
-                    phys_port = (
-                        self.physical_table_service.physical_structure_table.get(
-                            phys_port_index
-                        )
-                    )
-                    if self._is_valid_port(phys_port):
-                        if_port = self.port_table_service.ports_dict.get(if_index)
-                        parent = self._attach_port_to_parent(phys_port, if_port)
-                        if not parent:
-                            continue
-                        identified_ports.append(if_index)
+                self._load_ports_based_on_mapping()
 
-                        port_snmp_data = self.port_table_service.load_if_port(
-                            if_port.relative_address.native_index
-                        )
-                        port_parent_ids = port_snmp_data.port_id[
-                            : port_snmp_data.port_id.rfind("/")
-                        ]
-                        self._port_id_to_module_map[
-                            port_parent_ids.replace("/", "-")
-                        ] = parent
-
-            for if_index, interface in self.port_table_service.ports_dict.items():
-                if if_index in identified_ports:
-                    continue
-
-                port_if_entity = self.port_table_service.load_if_port(if_index)
-                sec_name = port_if_entity.if_descr_name
-                port_id = port_if_entity.port_id.replace("/", "-")
-                port_ids = port_id[: port_id.rfind("-")]
-                parent = self._port_id_to_module_map.get(port_ids)
-                if parent:
-                    parent.connect_port(interface)
-                    continue
-                if self.physical_table_service.physical_ports_list:
-                    entity_port = self.port_mapping_table_service.get_mapping(
-                        interface, sec_name
-                    )
-                    if not entity_port:
-                        self.logger.debug(
-                            "No mapping found for port " f"{interface.name}"
-                        )
-                    elif self._is_valid_port(entity_port):
-                        self._attach_port_to_parent(entity_port, interface)
-                        continue
-                self._guess_port_parent(if_index, interface)
+            if len(self.port_table_service.ports_dict) == len(self._identified_ports):
+                return
+            self._load_ports_from_if_table()
 
         elif self.physical_table_service.physical_ports_list:
-            for phys_port in self.physical_table_service.physical_ports_list:
-                parent = self.physical_table_service.get_parent_entity(
-                    phys_port,
-                )
-                if parent:
-                    parent.connect_port(phys_port)
+            self._load_ports_from_physical_table()
 
         self.logger.info("Building Ports completed")
 
+    def _load_ports_based_on_mapping(self):
+        for (
+            if_index,
+            phys_port_index,
+        ) in self.port_snmp_mapping_table.port_mapping_snmp_table.items():
+            phys_port = self.physical_table_service.physical_structure_table.get(
+                phys_port_index
+            )
+            if not self._is_valid_port(phys_port):
+                continue
+            if_port = self.port_table_service.ports_dict.get(if_index)
+            port_if_entity = self.port_table_service.load_if_port(if_index)
+            port_id = port_if_entity.port_id
+            port_ids = port_id[: port_id.rfind("-")]
+            if len(port_ids.split("-")) > 3:
+                port_ids = port_ids[: port_ids.rfind("-")]
+            parent = self._port_id_to_module_map.get(port_ids)
+            if parent:
+                parent.connect_port(if_port)
+                self._identified_ports.append(if_index)
+                continue
+
+            parent = self._attach_port_to_parent(phys_port, if_port, port_id)
+            if not parent:
+                continue
+            self._identified_ports.append(if_index)
+            if port_ids not in self._port_id_to_module_map:
+                self._port_id_to_module_map[port_ids] = parent
+
+    def _load_ports_from_if_table(self):
+        for if_index, interface in self.port_table_service.ports_dict.items():
+            if if_index in self._identified_ports:
+                continue
+
+            port_if_entity = self.port_table_service.load_if_port(if_index)
+            sec_name = port_if_entity.if_descr_name
+            port_id = port_if_entity.port_id
+            port_ids = port_id[: port_id.rfind("-")]
+            if len(port_id.split("-")) > 4:
+                port_ids = port_ids[: port_ids.rfind("-")]
+            parent = self._port_id_to_module_map.get(port_ids)
+            if parent:
+                parent.connect_port(interface)
+                continue
+            if self.physical_table_service.physical_ports_list:
+                entity_port = self.port_mapping_table_service.get_mapping(
+                    interface, sec_name
+                )
+                if not entity_port:
+                    self.logger.debug(f"No mapping found for port {interface.name}")
+                elif self._is_valid_port(entity_port):
+                    self._attach_port_to_parent(entity_port, interface, port_id)
+                    self._port_id_to_module_map[port_ids] = parent
+                    self._identified_ports.append(if_index)
+                    continue
+            self._guess_port_parent(if_index, interface)
+            self._identified_ports.append(if_index)
+
+    def _load_ports_from_physical_table(self):
+        for phys_port in self.physical_table_service.physical_ports_list:
+            parent = self.physical_table_service.get_parent_entity(
+                phys_port,
+            )
+            if parent:
+                parent.connect_port(phys_port)
+
     def _guess_port_parent(self, if_index, interface):
         port_if_entity = self.port_table_service.load_if_port(if_index)
-        port_id = port_if_entity.port_id.replace("/", "-")
+        port_id = port_if_entity.port_id
         port_ids = port_id[: port_id.rfind("-")]
         parent = self.physical_table_service.get_parent_entity_by_ids(port_ids)
         if parent:
             parent.connect_port(interface)
             self._port_id_to_module_map[port_ids] = parent
         else:
-            self._add_port_to_chassis(interface)
+            self._add_port_to_chassis(interface, port_id)
 
     def _is_valid_port(self, entity_port):
         result = True
         if self.port_table_service.is_wrong_port(entity_port.name):
             result = False
-        if self.port_table_service.is_wrong_port(entity_port.port_description):
+        if entity_port.port_description and self.port_table_service.is_wrong_port(
+            entity_port.port_description
+        ):
             result = False
         return result
 
-    def _attach_port_to_parent(self, entity_port, if_port):
+    def _attach_port_to_parent(self, entity_port, if_port, port_id):
         parent = self.physical_table_service.get_port_parent_entity(entity_port)
+        parent = self._detect_and_connect_parent(parent)
         if parent:
+            if (
+                len(port_id.split("-")) - len(str(parent.relative_address).split("/"))
+                > 1
+            ):
+                parent = (
+                    self.physical_table_service.generate_module(parent, port_id)
+                    or parent
+                )
             parent.connect_port(if_port)
-            self._detect_and_connect_parent(parent)
+            self._update_parent_ids(parent, port_id)
             return parent
+
+    def _update_parent_ids(self, parent, port_id):
+        port_ids = port_id.split("-")[:-1]
+        parent_ids = str(parent.relative_address).split("/")
+        relative_address = parent.relative_address
+        chassis = parent_ids[0].replace("CH", "")
+        if len(parent_ids) > 2:
+            port_ids_list = port_ids[1:]
+            if len(port_ids_list) > 2:
+                port_ids_list = port_ids_list[:-1]
+            port_ids_reverse = port_ids_list
+            port_ids_reverse.reverse()
+            for module_id in port_ids_reverse:
+                relative_address.native_index = module_id
+                relative_address = relative_address.parent_node
+        elif len(parent_ids) == 2 and len(port_ids) > 1:
+            if chassis == port_ids[0]:
+                parent.relative_address.native_index = port_ids[1]
+                return
+            else:
+                parent.relative_address.native_index = port_ids[0]
 
     def _detect_and_connect_parent(self, entity):
         parent = self.physical_table_service.get_parent_entity(entity)
         if parent and entity not in parent.extract_sub_resources():
+            if "module" in parent.name.lower():
+                new_entity = self._resource_model.entities.SubModule(
+                    entity.relative_address.native_index
+                )
+                new_entity.serial_number = parent.serial_number
+                new_entity.model = parent.model
+                new_entity.version = parent.version
+                entity = new_entity
+
             entity.relative_address.parent_node = parent.relative_address
             parent.extract_sub_resources().append(entity)
-            if parent in self.physical_table_service.physical_chassis_dict:
-                return
-            return self._detect_and_connect_parent(parent)
+            if parent in self.physical_table_service.physical_chassis_dict.values():
+                return entity
+            self._detect_and_connect_parent(parent)
+        return entity
 
-    def _add_port_to_chassis(self, interface):
+    def _add_port_to_chassis(self, interface, port_id):
         """Add port to chassis."""
         parent_element = None
         if len(self._chassis) > 1:
-            match = re.search(
-                r"(?P<ch_index>\d+)(/\d+)*/(?P<if_index>\d+)$",
-                interface.name,
-                re.IGNORECASE,
-            )
-
-            if match:
-                chassis_id = match.groupdict().get("ch_index")
+            if port_id:
+                chassis_id = port_id.split("/")[0]
                 parent_element = self._chassis.get(chassis_id, None)
         if not parent_element:
             if not self._chassis:

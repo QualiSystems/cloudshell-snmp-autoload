@@ -156,7 +156,7 @@ class PortsTable:
         )
         self.ports_tables.port_auto_neg.set_port_attributes(port_object)
         port_object.adjacent = self.ports_tables.port_neighbors.get_adjacent_by_port(
-            port_object
+            port_object, port
         )
 
         self._if_port_dict[port.if_index] = port_object

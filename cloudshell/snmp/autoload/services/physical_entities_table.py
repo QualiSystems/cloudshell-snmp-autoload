@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from functools import lru_cache
 from logging import Logger
 
 from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
@@ -44,6 +45,7 @@ class PhysicalTable:
         return self._power_port_dict
 
     @property
+    @lru_cache()
     def physical_modules_ids_dict(self):
         if not self._modules_dict:
             self._get_entity_table()
@@ -54,6 +56,8 @@ class PhysicalTable:
             indexes.reverse()
             for module_index in indexes:
                 ids = self._build_module_ids(module_index)
+                if not ids:
+                    continue
                 module = self.physical_structure_table.get(module_index)
                 self._modules_hierarchy_dict[ids].append(module)
         return self._modules_hierarchy_dict
@@ -74,6 +78,8 @@ class PhysicalTable:
         module_ids = []
         while entity_id:
             module = self.physical_structure_table.get(entity_id)
+            if not module:
+                return
             module_ids.append(module.relative_address.native_index)
             entity_id = self._modules_dict.get(entity_id)
         module_ids.reverse()
@@ -218,8 +224,8 @@ class PhysicalTable:
 
     def get_port_parent_entity(self, entity_port):
         port_id = entity_port.relative_address.native_index
-        parent_entity = self._find_parent_module(port_id)
-        parent = self._physical_structure_table.get(parent_entity.index)
+        parent_index = self._port_parent_dict.get(port_id)
+        parent = self._physical_structure_table.get(parent_index)
         return parent
 
     def get_parent_entity(self, entity):
@@ -268,3 +274,16 @@ class PhysicalTable:
             parent.extract_sub_resources().append(module_object)
             if module_object:
                 return module_object
+
+    def generate_module(self, parent_module, port_ids):
+        port_ids_list = port_ids.split("-")
+        chassis = port_ids_list[0]
+        module_id = port_ids_list[1]
+        sub_module = port_ids_list[2]
+        sub_module_id = f"{chassis}-" f"{module_id}-" f"{sub_module}"
+
+        module_object = self._resource_model.entities.SubModule(index=sub_module)
+        self.physical_modules_ids_dict[sub_module_id] = module_object
+        module_object.relative_address.parent_node = parent_module.relative_address
+        parent_module.extract_sub_resources().append(module_object)
+        return module_object

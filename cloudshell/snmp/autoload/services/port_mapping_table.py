@@ -3,7 +3,6 @@ from logging import Logger
 
 from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTable
 from cloudshell.snmp.autoload.services.port_table import PortsTable
-from cloudshell.snmp.autoload.snmp.helper.snmp_if_entity import SnmpIfEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_port_mapping_table import (
     SnmpPortMappingTable,
 )
@@ -31,23 +30,18 @@ class PortMappingService:
     def _get_physical_ports(self):
         for port_id in self._physical_table.physical_ports_list:
             port = self._physical_table.physical_structure_table.get(port_id)
-            if self._port_table.is_wrong_port(
-                port.name
-            ) or self._port_table.is_wrong_port(port.port_description):
+            if self._port_table.is_wrong_port(port.name) or (
+                port.port_description
+                and self._port_table.is_wrong_port(port.port_description)
+            ):
                 continue
             self._physical_port_dict[port.name.lower()] = port
-            self._physical_port_dict[port.port_description.lower()] = port
-            port_ids = SnmpIfEntity.PORT_IDS_PATTERN.search(port.name)
-            port_ids_descr = SnmpIfEntity.PORT_IDS_PATTERN.search(port.port_description)
-            self._physical_port_ids_dict[port_ids] = port.name
-            self._physical_port_ids_dict[port_ids_descr] = port.port_description
+            if port.port_description:
+                self._physical_port_dict[port.port_description.lower()] = port
 
     def get_mapping(self, port, if_descr):
-        entity_port_id = self._port_mapping.port_mapping_snmp_table.get(
-            port.relative_address.native_index
-        )
-        entity_port = self._physical_table.physical_structure_table.get(entity_port_id)
         if_descr = if_descr.replace("/", "-")
+        entity_port = None
         if not entity_port and port.name:
             entity_port = self._get_if_port_from_physical_port_name(port.name)
         if not entity_port and if_descr:
@@ -88,5 +82,5 @@ class PortMappingService:
     def _drop_mapped_port(self, port):
         if port and port.name.lower() in self._physical_port_dict:
             self._physical_port_dict.pop(port.name.lower())
-        if port and port.port_description.lower() in self._physical_port_dict:
+        if port and port.port_description in self._physical_port_dict:
             self._physical_port_dict.pop(port.port_description.lower())

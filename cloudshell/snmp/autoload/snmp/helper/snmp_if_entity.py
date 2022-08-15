@@ -55,7 +55,7 @@ class SnmpIfEntity:
     def port_id(self):
         port_id = self.PORT_IDS_PATTERN.search(self.port_name)
         if port_id:
-            return port_id.group()
+            return port_id.group().replace("/", "-")
 
     @property
     @lru_cache()

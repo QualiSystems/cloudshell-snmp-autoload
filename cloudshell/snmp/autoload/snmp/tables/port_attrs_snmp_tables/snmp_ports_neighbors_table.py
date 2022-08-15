@@ -86,10 +86,12 @@ class PortNeighbours(PortAttributesServiceInterface):
                     subtype = loc_subtype.safe_value.lower().strip("'")
                     self._adjacent_table[subtype].update(loc_dict)
 
-    def set_port_attributes(self, port_object):
-        port_object.adjacent = self.get_adjacent_by_port(port_object)
+    def set_port_attributes(self, port_object, port):
+        port_object.adjacent = self.get_adjacent_by_port(
+            port=port, port_object=port_object
+        )
 
-    def get_adjacent_by_port(self, port_object):
+    def get_adjacent_by_port(self, port_object, port):
         """Get connected device interface and device name to the specified port id.
 
         Using cdp or lldp protocols
@@ -98,7 +100,9 @@ class PortNeighbours(PortAttributesServiceInterface):
         """
         if self.LLDP_LOC_INTERFACE_NAME in self._adjacent_table:
             result = self._adjacent_table.get(self.LLDP_LOC_INTERFACE_NAME, {}).get(
-                port_object.name
+                port.if_name
+            ) or self._adjacent_table.get(self.LLDP_LOC_INTERFACE_NAME, {}).get(
+                port.if_descr_name
             )
             if result and result not in self._used_adjacent_entries:
                 self._used_adjacent_entries.append(result)
@@ -127,26 +131,25 @@ class PortNeighbours(PortAttributesServiceInterface):
                     self._used_adjacent_entries.append(result)
                     return result
         for lldp_data in self._adjacent_table.values():
+            lldp_rem_str = lldp_data.get(port.if_descr_name.replace("-", "/"))
+            if not lldp_rem_str:
+                lldp_rem_str = lldp_data.get(port.if_name.replace("-", "/"))
+            if lldp_rem_str and lldp_rem_str not in self._used_adjacent_entries:
+                self._used_adjacent_entries.append(lldp_rem_str)
+                return lldp_rem_str
             for lldp_rem_key, lldp_rem_data in lldp_data.items():
-                if self.check_port_name(lldp_rem_key, lldp_rem_data, port_object):
+                if self.check_port_name(lldp_rem_key, lldp_rem_data, port):
                     self._used_adjacent_entries.append(lldp_rem_data)
                     return lldp_rem_data
 
     def check_port_name(self, lldp_rem_key, lldp_rem_data, port_object):
         lldp_port_name = lldp_rem_key.replace("/", "-")
-        port_desc = ""
-        port_name = ""
-        if port_object:
-            if port_object.port_description:
-                port_desc = port_object.port_description
-            if port_object.name:
-                port_name = port_object.name
         if lldp_rem_data not in self._used_adjacent_entries:
-            if lldp_port_name == port_desc or (
-                port_desc and self._port_match(port_desc, lldp_port_name)
+            if port_object.if_descr_name and self._port_match(
+                port_object.if_descr_name, lldp_port_name
             ):
                 return True
-            if lldp_port_name == port_name or (
-                port_name and self._port_match(port_name, lldp_port_name)
+            if port_object.if_name and self._port_match(
+                port_object.if_name, lldp_port_name
             ):
                 return True
