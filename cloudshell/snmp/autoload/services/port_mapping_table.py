@@ -20,7 +20,7 @@ class PortMappingService:
         port_table: PortsTable,
     ):
         self._logger = logger
-        self._port_mapping = port_snmp_mapping_table
+        self.port_mapping = port_snmp_mapping_table
         self._physical_table = physical_table
         self._port_table = port_table
         self._physical_port_dict = {}

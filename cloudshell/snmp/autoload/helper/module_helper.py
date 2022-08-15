@@ -2,8 +2,9 @@ class ModuleHelper:
     def __init__(self, resource_model, physical_table_service, logger):
         self._resource_model = resource_model
         self._physical_table_service = physical_table_service
+        self._logger = logger
 
-    def _attach_port_to_parent(self, entity_port, if_port, port_id):
+    def attach_port_to_parent(self, entity_port, if_port, port_id):
         parent = self._physical_table_service.get_port_parent_entity(entity_port)
         parent = self._detect_and_connect_parent(parent)
         if parent:
