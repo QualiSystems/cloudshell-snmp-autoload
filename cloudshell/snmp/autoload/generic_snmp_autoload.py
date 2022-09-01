@@ -155,7 +155,6 @@ class GenericSNMPAutoload:
         Get resource details and attributes for every port
         base on data from IF-MIB Table.
         """
-        self.logger.info("Loading Ports ...")
         port_helper = PortHelper(
             physical_table_service=self.physical_table_service,
             port_table_service=self.port_table_service,
@@ -163,20 +162,7 @@ class GenericSNMPAutoload:
             resource_model=self._resource_model,
             logger=self.logger,
         )
-        if self.port_table_service.ports_dict:
-            if self.port_snmp_mapping_table:
-                port_helper.load_ports_based_on_mapping()
-
-            if len(self.port_table_service.ports_dict) == len(
-                port_helper.identified_ports
-            ):
-                return
-            port_helper.load_ports_from_if_table()
-
-        elif self.physical_table_service.physical_ports_list:
-            port_helper.load_ports_from_physical_table()
-
-        self.logger.info("Building Ports completed")
+        port_helper.build_ports_structure()
 
     def _build_chassis(self):
         """Get Chassis element attributes.

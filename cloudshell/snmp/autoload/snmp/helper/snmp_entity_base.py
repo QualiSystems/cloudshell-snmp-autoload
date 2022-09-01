@@ -8,9 +8,7 @@ from cloudshell.snmp.autoload.constants.entity_constants import (
     ENTITY_PARENT_ID,
     ENTITY_POSITION,
     ENTITY_SERIAL,
-    ENTITY_TO_CONTAINER_PATTERN,
     ENTITY_VENDOR_TYPE,
-    ENTITY_VENDOR_TYPE_TO_CLASS_MAP,
 )
 
 
@@ -58,9 +56,8 @@ class BaseEntity:
 
     @property
     def entity_class(self):
-        if self._entity_class is None:
-            self._entity_class = self._get_physical_class()
-        return self._entity_class
+        entity_class_response = self.entity_row_response.get(ENTITY_CLASS.object_name)
+        return entity_class_response.safe_value if entity_class_response else ""
 
     @property
     def vendor_type(self):
@@ -77,17 +74,3 @@ class BaseEntity:
         result = self.entity_row_response.get(ENTITY_SERIAL.object_name)
 
         return result.safe_value if result else ""
-
-    def _get_physical_class(self):
-        if ENTITY_TO_CONTAINER_PATTERN.search(self.vendor_type):
-            return "container"
-        entity_class_response = self.entity_row_response.get(ENTITY_CLASS.object_name)
-        entity_class = entity_class_response.safe_value if entity_class_response else ""
-        if not entity_class or "other" in entity_class:
-            if not self.vendor_type:
-                return ""
-            for key, value in ENTITY_VENDOR_TYPE_TO_CLASS_MAP.items():
-                if key.search(self.vendor_type):
-                    entity_class = value
-
-        return entity_class

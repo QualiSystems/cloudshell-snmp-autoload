@@ -130,9 +130,9 @@ class PortsTable:
             if not self.port_channel_valid_type_re.search(port.if_type):
                 return False
         if self.PORT_CHANNEL_NAME_LIST:
-            if not self.port_channel_name_re.search(port.if_name):
-                return False
-            if not self.port_channel_name_re.search(port.if_descr_name):
+            if not self.port_channel_name_re.search(
+                port.if_name
+            ) and not self.port_channel_name_re.search(port.if_descr_name):
                 return False
         return True
 

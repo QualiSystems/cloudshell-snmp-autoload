@@ -3,6 +3,7 @@ from collections import defaultdict
 from functools import lru_cache
 from logging import Logger
 
+from cloudshell.snmp.autoload.helper.chassis_helper import ChassisHelper
 from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
 
@@ -23,9 +24,10 @@ class PhysicalTable:
         self._power_port_dict = {}
         self._chassis_dict = {}
         self._modules_dict = {}
-        self._port_parent_dict = {}
+        self.port_parent_dict = {}
         self._modules_hierarchy_dict = defaultdict(list)
-        self._chassis_ids_dict = {}
+        self.chassis_ids_dict = {}
+        self.chassis_helper = ChassisHelper()
 
     @property
     def module_exclude_pattern(self):
@@ -66,6 +68,8 @@ class PhysicalTable:
     def physical_chassis_dict(self):
         if not self._chassis_dict:
             self._get_entity_table()
+        if not self._chassis_dict:
+            self._add_dummy_chassis("0")
         return self._chassis_dict
 
     @property
@@ -105,13 +109,14 @@ class PhysicalTable:
         if entity_index not in self.entity_table.physical_structure_table:
             return
         entity = self.load_entity(entity_index)
-        if "port" in entity.entity_class:
+        entity_class = self.chassis_helper.get_physical_class(entity)
+        if "port" in entity_class:
             self._add_port(entity)
-        elif "powersupply" in entity.entity_class.lower():
+        elif "powersupply" in entity_class.lower():
             self._add_power_port(entity)
-        elif "chassis" in entity.entity_class.lower():
+        elif "chassis" in entity_class.lower():
             self._add_chassis(entity)
-        elif "module" in entity.entity_class.lower():
+        elif "module" in entity_class.lower():
             self._add_module(entity)
 
     def _add_chassis(self, entity):
@@ -135,7 +140,7 @@ class PhysicalTable:
         self._logger.debug(f"Discovered a Chassis: {entity.model}")
         self._chassis_dict[entity.index] = chassis_object
         self._physical_structure_table[entity.index] = chassis_object
-        self._chassis_ids_dict[index] = chassis_object
+        self.chassis_ids_dict[index] = chassis_object
 
     def _add_port(self, entity):
         name = entity.name or entity.description
@@ -144,12 +149,12 @@ class PhysicalTable:
         port_object = self._resource_model.entities.Port(
             index=entity.index, name=name.replace("/", "-")
         )
-        parent_module = self._find_parent_module(entity.index)
+        parent_module = self.find_parent_module(entity.index)
         port_object.port_description = entity.description
         self._logger.debug(f"Discovered a Port: {entity.model}")
         self._physical_structure_table[entity.index] = port_object
         self._port_list.append(entity.index)
-        self._port_parent_dict[entity.index] = parent_module.index
+        self.port_parent_dict[entity.index] = parent_module.index
 
     def _add_power_port(self, entity):
         power_port_object = self._resource_model.entities.PowerPort(
@@ -165,29 +170,31 @@ class PhysicalTable:
     def _find_parent_containers(self, entity_id):
         parent_index = self.entity_table.physical_structure_table.get(entity_id)
         parent = self.load_entity(parent_index)
-        if (
-            parent.entity_class in ["container", "backplane"]
-            or self.module_exclude_pattern.search(parent.vendor_type)
-            or "port" in parent.entity_class
+        entity_class = self.chassis_helper.get_physical_class(parent)
+        if entity_class in ["container", "backplane"]:
+            return parent
+        elif (
+            self.module_exclude_pattern.search(parent.vendor_type)
+            or "port" in entity_class
         ):
-            entity = self._find_parent_containers(parent_index)
-            return entity if entity else parent
+            return self._find_parent_containers(parent_index)
 
-    def _find_parent_module(self, entity_id):
+    def find_parent_module(self, entity_id):
         parent_index = self.entity_table.physical_structure_table.get(entity_id)
         if not parent_index:
             raise Exception("Error loading parent entity")
         parent = self.load_entity(parent_index)
+        entity_class = self.chassis_helper.get_physical_class(parent)
         if not parent.entity_row_response:
             return
-        if "module" in parent.entity_class and not self.module_exclude_pattern.search(
+        if "module" in entity_class and not self.module_exclude_pattern.search(
             parent.vendor_type
         ):
             return parent
-        elif "chassis" in parent.entity_class:
+        elif "chassis" in entity_class:
             return parent
         else:
-            return self._find_parent_module(parent_index)
+            return self.find_parent_module(parent_index)
 
     def _add_module(self, entity: BaseEntity):
         if self.module_exclude_pattern and self.module_exclude_pattern.search(
@@ -217,73 +224,17 @@ class PhysicalTable:
         if not parent_index:
             raise Exception("Error loading parent entity")
         parent = self.load_entity(parent_index)
-        if "chassis" in parent.entity_class:
+        entity_class = self.chassis_helper.get_physical_class(parent)
+        if "chassis" in entity_class:
             return parent
         else:
             return self.get_parent_chassis(parent_index)
 
-    def get_port_parent_entity(self, entity_port):
-        port_id = entity_port.relative_address.native_index
-        parent_index = self._port_parent_dict.get(port_id)
-        parent = self._physical_structure_table.get(parent_index)
-        return parent
+    def _add_dummy_chassis(self, chassis_id):
+        """Create Dummy Chassis."""
+        chassis_object = self._resource_model.entities.Chassis(index=chassis_id)
 
-    def get_parent_entity(self, entity):
-        if entity in self.physical_chassis_dict.values():
-            return
-        entity_id = next(
-            (k for k, v in self._physical_structure_table.items() if v == entity), None
-        )
-        parent_entity = self._find_parent_module(entity_id)
-        parent = self._physical_structure_table.get(parent_entity.index)
-        return parent
-
-    def get_parent_entity_by_ids(self, port_ids):
-        port_parent_id = port_ids
-        if "-" in port_ids:
-            port_parent_id = port_ids[: port_ids.rfind("-")]
-        parent = self.physical_modules_ids_dict.get(port_parent_id)
-        if not parent and len(port_ids.split("-")) < 3:
-            for chassis in self._chassis_ids_dict:
-                parent = self.physical_modules_ids_dict.get(
-                    f"{chassis}-{port_parent_id}"
-                )
-                if parent:
-                    return parent[0]
-        if self.physical_modules_ids_dict:
-            module_id = port_ids
-            ids = port_ids.split("-")
-            if len(ids) == 1:
-                parent = next(
-                    (chassis for _, chassis in self._chassis_ids_dict.items()), None
-                )
-                if not parent:
-                    return
-            if len(ids) == 2:
-                chassis, module_id = port_ids
-                parent = self._chassis_ids_dict.get(chassis)
-            elif len(ids) == 3:
-                chassis, module_id, sub_module = port_ids
-                parent = self.physical_modules_ids_dict.get(f"{chassis}-{module_id}")[
-                    -1
-                ]
-
-            module_object = self._resource_model.entities.Module(index=module_id)
-            self.physical_modules_ids_dict[module_id] = module_object
-            module_object.relative_address.parent_node = parent.relative_address
-            parent.extract_sub_resources().append(module_object)
-            if module_object:
-                return module_object
-
-    def generate_module(self, parent_module, port_ids):
-        port_ids_list = port_ids.split("-")
-        chassis = port_ids_list[0]
-        module_id = port_ids_list[1]
-        sub_module = port_ids_list[2]
-        sub_module_id = f"{chassis}-" f"{module_id}-" f"{sub_module}"
-
-        module_object = self._resource_model.entities.SubModule(index=sub_module)
-        self.physical_modules_ids_dict[sub_module_id] = module_object
-        module_object.relative_address.parent_node = parent_module.relative_address
-        parent_module.extract_sub_resources().append(module_object)
-        return module_object
+        self._chassis_dict[chassis_id] = chassis_object
+        self._physical_structure_table[chassis_id] = chassis_object
+        self.chassis_ids_dict[chassis_id] = chassis_object
+        self._logger.warning(f"Added Dummy Chassis with index {chassis_id}")

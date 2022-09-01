@@ -6,7 +6,9 @@ from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTa
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
 from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
 
-from .physical_entities_data import MOCK_SNMP_RESPONSE
+from tests.cloudshell.snmp.autoload.data.physical_entities_data import (
+    MOCK_SNMP_RESPONSE,
+)
 
 
 class TestPhysicalTable(TestCase):
@@ -52,7 +54,7 @@ class TestPhysicalTable(TestCase):
         position_id = "1"
         expected_id = "4015"
 
-        parent = self.table._find_parent_module(ent_index)
+        parent = self.table.find_parent_module(ent_index)
         assert position_id == parent.position_id
         assert expected_id == parent.index
 
