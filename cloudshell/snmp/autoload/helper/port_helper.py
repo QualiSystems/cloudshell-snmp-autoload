@@ -79,14 +79,6 @@ class PortHelper:
                 parent.connect_port(if_port)
                 self._identified_ports.append(if_index)
                 continue
-            if port_ids.split("-"):
-                parent = self._port_parent_ids_to_module_map.get(
-                    port_ids[: port_ids.rfind("-")]
-                )
-                if parent:
-                    parent.connect_port(if_port)
-                    self._identified_ports.append(if_index)
-                    continue
 
             parent = self._module_helper.attach_port_to_parent(
                 phys_port, if_port, port_ids
@@ -94,11 +86,7 @@ class PortHelper:
             if not parent:
                 continue
             self._identified_ports.append(if_index)
-            if (
-                port_ids not in self._module_helper.port_id_to_module_map
-                and not parent.name.lower().startswith("chassis")
-            ):
-                self._update_port_to_module_map(port_ids, parent)
+            self._update_port_to_module_map(port_ids, parent)
 
     def _load_ports_from_if_table(self):
         for if_index, interface in self._port_table_service.ports_dict.items():
