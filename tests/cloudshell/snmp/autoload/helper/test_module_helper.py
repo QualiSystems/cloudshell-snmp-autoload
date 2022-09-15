@@ -77,3 +77,24 @@ class TestPhysicalTable(TestCase):
         )
         assert str(result.relative_address) == "CH0/M8/SM0"
         assert str(interface.relative_address) == "CH0/M8/SM0/P4324"
+
+    def test_detect_and_connect_parent_sm(self):
+        _ = self.table.physical_structure_table
+        module_helper = self._create_module_helper()
+        parent = self.table.physical_structure_table.get("4015")
+        result = module_helper.detect_and_connect_parent(parent, port_ids="8-0")
+        assert str(result.relative_address) == "CH0/M8/SM0"
+
+    def test_detect_and_connect_parent(self):
+        _ = self.table.physical_structure_table
+        module_helper = self._create_module_helper()
+        parent = self.table.physical_structure_table.get("4000")
+        result = module_helper.detect_and_connect_parent(parent, port_ids="8")
+        assert str(result.relative_address) == "CH0/M8"
+
+    def test_detect_and_connect_parent_model_wrong_id(self):
+        _ = self.table.physical_structure_table
+        module_helper = self._create_module_helper()
+        parent = self.table.physical_structure_table.get("4000")
+        result = module_helper.detect_and_connect_parent(parent, port_ids="2-0")
+        assert str(result.relative_address) == "CH0/M2/SM0"

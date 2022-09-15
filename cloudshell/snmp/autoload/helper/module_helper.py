@@ -7,30 +7,200 @@ class ModuleHelper:
         self._physical_table_service = physical_table_service
         self._logger = logger
         self.port_id_to_module_map = {}
+        self.modules_list = []
+
+    def get_parent_module(self, port_id, entity=None):
+        chassis = list(self._physical_table_service.physical_chassis_dict.values())[0]
+        if not port_id and not entity:
+            return chassis
+        module_generated = False
+        port_ids = self._get_port_parent_ids_list(port_id)
+        parent = None
+        if entity:
+            parent = self.get_entity_parent_entity(entity)
+        if not parent:
+            parent = self.generate_module(port_ids.pop(-1))
+            module_generated = True
+        elif parent and port_ids:
+            parent.relative_address.native_index = port_ids.pop(-1)
+        if parent and parent.name.lower().startswith("chassis"):
+            return parent
+        parent_id = "-".join(port_ids)
+        module_parent = None
+        if port_ids:
+            module_parent = self.port_id_to_module_map.get(parent_id)
+            if module_parent:
+                parent = self._convert_module_to_sub_module(parent)
+                self._attach_entity_to_parent(module_parent, parent)
+                self._update_port_to_module_map(port_id, parent)
+                return parent
+        if not module_parent:
+            module_parent = self.get_entity_parent_entity(parent)
+            if (
+                module_parent
+                and not parent_id
+                and not module_parent.name.lower().startswith("chassis")
+            ):
+                parent_id = module_parent.relative_address.native_index
+                _module_parent = self.port_id_to_module_map.get(parent_id)
+                if _module_parent:
+                    parent = self._convert_module_to_sub_module(parent)
+                    self._attach_entity_to_parent(_module_parent, parent)
+                    self._update_port_to_module_map(port_id, parent)
+                    return parent
+        if not module_parent and parent_id:
+            module_parent = self.generate_module(parent_id)
+
+        if module_parent:
+            if module_parent.name.lower().startswith("chassis"):
+                chassis = module_parent
+                if not port_id:
+                    module_ids = "-".join(self._get_modules_ids(chassis, module=parent))
+                    parent_module = self.port_id_to_module_map.get(module_ids)
+                    if not parent_module:
+                        parent_module = next(
+                            (
+                                x
+                                for x in self.port_id_to_module_map.values()
+                                if self._find_module_ids(x) == module_ids
+                            ),
+                            None,
+                        )
+                        if parent_module:
+                            return parent_module
+                if len(port_ids) > 0 and module_generated:
+                    parent_module = self.generate_module(parent_id)
+                    self._attach_entity_to_parent(parent_module, parent)
+                    parent = parent_module
+                elif len(port_ids) > 0:
+                    index = port_ids.pop(-1)
+                    parent.relative_address.native_index = index
+                    self._update_port_to_module_map(parent_id, parent)
+                self._attach_entity_to_parent(chassis, parent)
+                self.port_id_to_module_map[port_id] = parent
+                return parent
+            else:
+                if parent_id:
+                    module_parent.relative_address.native_index = parent_id[
+                        parent_id.rfind("-") + 1 :
+                    ]
+
+                parent = self._convert_module_to_sub_module(parent)
+        else:
+            pass
+        if len(self._physical_table_service.physical_chassis_dict.items()) == 1:
+            chassis = list(self._physical_table_service.physical_chassis_dict.values())[
+                0
+            ]
+        else:
+            detected_chassis = self.get_entity_parent_entity(entity)
+            while detected_chassis and not detected_chassis.name.lower().startswith(
+                "chassis"
+            ):
+                self._update_module_attrs(detected_chassis, module_parent)
+                self._update_module_attrs(module_parent, parent)
+                detected_chassis = self.get_entity_parent_entity(detected_chassis)
+
+            if detected_chassis:
+                chassis = detected_chassis
+        parent_ids = "-".join(self._get_modules_ids(chassis, module_parent, parent))
+        if module_parent:
+            new_module_parent = None
+            if len(parent_id.split("-")) == 2 and not parent_ids.startswith(parent_id):
+                new_module_parent = self.port_id_to_module_map.get(
+                    parent_ids[: parent_ids.rfind("-")]
+                )
+            if not new_module_parent:
+                self._attach_entity_to_parent(chassis, module_parent)
+            else:
+                module_parent = new_module_parent
+        elif parent:
+            self._attach_entity_to_parent(chassis, parent)
+        else:
+            return chassis
+        if len(parent_id.split("-")) == 2 and parent_id != parent_ids:
+            new_parent = self.port_id_to_module_map.get(parent_ids)
+            if new_parent:
+                return new_parent
+        if not parent.relative_address.parent_node and module_parent:
+            self._attach_entity_to_parent(module_parent, parent)
+        if port_id not in self.port_id_to_module_map:
+            self._update_port_to_module_map(port_id, parent)
+
+        if module_parent and parent_id not in self.port_id_to_module_map:
+            self._update_port_to_module_map(parent_id, module_parent)
+        return parent
+
+    def _get_modules_ids(self, chassis, module_parent=None, module=None):
+        modules_ids = []
+        if chassis:
+            modules_ids = [chassis.relative_address.native_index]
+        if module_parent:
+            modules_ids.append(module_parent.relative_address.native_index)
+        if module:
+            modules_ids.append(module.relative_address.native_index)
+        return modules_ids
+
+    def _get_module_from_module_map(self, port_parent_id):
+        parent = self.port_id_to_module_map.get(port_parent_id)
+        parent_ids = self._get_port_parent_ids_list(port_parent_id)
+        if (
+            not parent
+            and len(parent_ids) > 2
+            and parent_ids[0] not in self._physical_table_service.physical_chassis_dict
+        ):
+            if len(self._physical_table_service.physical_chassis_dict.items()) == 1:
+                chassis = list(
+                    self._physical_table_service.physical_chassis_dict.values()
+                )[0]
+                new_parent_ids = [chassis]
+                new_parent_ids.extend(parent_ids[1:])
+                new_parent_id = "-".join(new_parent_ids)
+                parent = self.port_id_to_module_map.get(new_parent_id)
+        return parent
+
+    def _update_port_to_module_map(self, port_parent_id, parent):
+        if (
+            port_parent_id not in self.port_id_to_module_map
+            and not parent.name.lower().startswith("chassis")
+        ):
+            self.port_id_to_module_map[port_parent_id] = parent
+            parent_id_list = port_parent_id.split("-")
+            rel_address = self._find_module_ids(parent)
+            if len(parent_id_list) > 1 and rel_address != port_parent_id:
+                self.port_id_to_module_map[rel_address] = parent
+
+    def _find_module_ids(self, module):
+        module_ids = []
+        rel_address_match = re.findall(r"\d+", str(module.relative_address))
+        if rel_address_match:
+            module_ids = rel_address_match
+        return "-".join(module_ids)
+
+    def _convert_module_to_sub_module(self, module):
+        if module:
+            if module.name.lower().startswith("sub"):
+                return module
+            sub_module = self.generate_sub_module(module.relative_address.native_index)
+            self._update_module_attrs(module, sub_module)
+            return sub_module
+
+    def _update_module_attrs(self, source_module, target_module):
+        if source_module and target_module:
+            target_module.model = source_module.model
+            if hasattr(target_module, "version"):
+                target_module.version = source_module.version
+            target_module.serial_number = source_module.serial_number
+            target_module.model_name = source_module.model_name
+
+    def _attach_entity_to_parent(self, parent, entity):
+        if parent and entity and entity not in parent.extract_sub_resources():
+            entity.relative_address.parent_node = parent.relative_address
+            parent.extract_sub_resources().append(entity)
 
     def attach_port_to_parent(self, entity_port, if_port, port_id):
-        parent = self.get_port_parent_entity(entity_port)
-        if parent.name.lower().startswith("chassis"):
-            parent.connect_port(if_port)
-            return parent
-        port_ids_list = self._get_port_parent_ids_list(port_id)
-        if port_id and port_ids_list and len(port_ids_list) == 1:
-            parent.relative_address.native_index = port_ids_list[0]
-        if not parent:
-            return
-        parent = self.detect_and_connect_parent(parent)
-        if parent:
-            len_port_ids_list = len(port_ids_list)
-            if (
-                len_port_ids_list > 2
-                and len_port_ids_list - len(str(parent.relative_address).split("/"))
-                >= 1
-            ):
-                parent = self.generate_sub_module(parent, port_ids_list) or parent
-            parent.connect_port(if_port)
-            if len(port_ids_list) > 1:
-                self._update_parent_ids(parent, port_id)
-            return parent
+        parent = self.get_parent_module(port_id, entity_port)
+        parent.connect_port(if_port)
 
     def _get_port_parent_ids_list(self, port_id):
         if "-" in port_id:
@@ -41,235 +211,25 @@ class ModuleHelper:
             port_ids = [port_id]
         return port_ids
 
-    def _update_parent_ids(self, parent, port_id):
-        port_ids = port_id.split("-")
-        parent_ids = str(parent.relative_address).split("/")
-        if len(port_ids) == len(parent_ids):
-            parent_ids_list = re.findall(r"\d+", str(parent.relative_address))
-            if port_ids == parent_ids_list:
-                return
-        relative_address = parent.relative_address
-        chassis = parent_ids[0].replace("CH", "")
-        if len(parent_ids) > 2:
-            port_ids_list = port_ids[1:]
-            if len(port_ids_list) > 2:
-                port_ids_list = port_ids_list[:-1]
-            port_ids_reverse = port_ids_list
-            port_ids_reverse.reverse()
-            for module_id in port_ids_reverse:
-                relative_address.native_index = module_id
-                relative_address = relative_address.parent_node
-        elif len(parent_ids) == 2 and len(port_ids) > 1:
-            if chassis and chassis == port_ids[0]:
-                parent.relative_address.native_index = port_ids[1]
-                return
-            else:
-                parent.relative_address.native_index = port_ids[0]
-        else:
-            parent.relative_address.native_index = port_ids[0]
+    def _get_parent_id_from_relative_path(self, relative_path):
+        parent_ids = []
+        while relative_path.parent_node:
+            parent_ids.append(relative_path.native_index)
+            relative_path = relative_path.parent_node
+        parent_ids.reverse()
+        return parent_ids
 
-    def detect_and_connect_parent(self, entity):
-        if str(entity.relative_address.parent_node).startswith("CH"):
-            return entity
-        parent = self.get_parent_entity(entity)
-        if parent and entity not in parent.extract_sub_resources():
-            if "module" in parent.name.lower():
-                new_entity = self._resource_model.entities.SubModule(
-                    entity.relative_address.native_index
-                )
-                new_entity.serial_number = parent.serial_number
-                new_entity.model = parent.model
-                new_entity.version = parent.version
-                entity = new_entity
+    def get_entity_parent_entity(self, entity):
+        parent_index = self._physical_table_service.parent_dict.get(entity)
+        if parent_index:
+            return self._physical_table_service.physical_chassis_dict.get(
+                parent_index
+            ) or self._physical_table_service.create_module(parent_index)
 
-            entity.relative_address.parent_node = parent.relative_address
-            parent.extract_sub_resources().append(entity)
-            if parent in self._physical_table_service.physical_chassis_dict.values():
-                return entity
-            new_entity = self.detect_and_connect_parent(parent)
-            if new_entity.relative_address != entity.relative_address.parent_node:
-                entity = new_entity
-        return entity
-
-    def get_port_parent_entity(self, entity_port):
-        port_id = entity_port.relative_address.native_index
-        parent_index = self._physical_table_service.port_parent_dict.get(port_id)
-        parent = self._physical_table_service.physical_structure_table.get(parent_index)
-        return parent
-
-    def get_parent_entity(self, entity):
-        if entity in self._physical_table_service.physical_chassis_dict.values():
-            return
-        entity_id = next(
-            (
-                k
-                for k, v in self._physical_table_service.physical_structure_table.items()
-                if v == entity
-            ),
-            None,
-        )
-        parent_entity = self._physical_table_service.find_parent_module(entity_id)
-        parent = self._physical_table_service.physical_structure_table.get(
-            parent_entity.index
-        )
-        return parent
-
-    def get_parent_entity_by_ids(self, port_parent_id):
-        result = self._get_parent_entity_by_ids(port_parent_id)
-        return self.detect_and_connect_parent(result)
-
-    def _get_parent_entity_by_ids(self, port_parent_id):
-        if "-" in port_parent_id:
-            module_parent = self.port_id_to_module_map.get(
-                port_parent_id[: port_parent_id.rfind("-")]
-            )
-        else:
-            module_parent = self.port_id_to_module_map.get(port_parent_id)
-        if module_parent:
-            sub_module = self.generate_sub_module(
-                module_parent, port_parent_id.split("-")
-            )
-            return sub_module
-
-        parent = self._physical_table_service.physical_modules_ids_dict.get(
-            port_parent_id
-        )
-        if parent:
-            return parent[0]
-        if (
-            not parent
-            and len(self._physical_table_service.chassis_ids_dict) == 1
-            and len(port_parent_id.split("-")) < 3
-        ):
-            chassis_id = list(self._physical_table_service.chassis_ids_dict.keys())[0]
-            parent_id = f"{chassis_id}-{port_parent_id}"
-            parent = self._get_physical_module(parent_id)
-            if parent:
-                return parent
-        elif not parent and len(port_parent_id.split("-")) < 2:
-            for chassis in self._physical_table_service.chassis_ids_dict:
-                parent = self._physical_table_service.physical_modules_ids_dict.get(
-                    f"{chassis}-{port_parent_id}"
-                )
-                if parent:
-                    return parent[0]
-        if not parent:
-            parent = self._find_or_generate_parent(port_parent_id)
-        return parent
-
-    def _find_or_generate_parent(self, port_parent_id):
-        ids = port_parent_id.split("-")
-        parent = None
-        if len(ids) == 1:
-            parent = next(
-                (
-                    chassis
-                    for chassis in self._physical_table_service.chassis_ids_dict.values()
-                ),
-                None,
-            )
-            chassis_id = parent.relative_address.native_index
-            module_ids = f"{chassis_id}-{ids[0]}"
-            module = self._get_physical_module(module_ids)
-            return module or self.generate_module(parent, ids[0])
-        elif len(ids) == 2:
-            chassis_id, module_id = ids
-            chassis = self._physical_table_service.chassis_ids_dict.get(chassis_id)
-            parent_module = self._get_physical_module(f"{chassis_id}-{module_id}")
-            if not parent_module:
-                parent_module = self.generate_module(chassis, module_id)
-            if not chassis:
-                if len(self._physical_table_service.chassis_ids_dict) == 1:
-                    chassis = next(
-                        (
-                            chassis
-                            for chassis in self._physical_table_service.chassis_ids_dict.values()
-                        ),
-                        None,
-                    )
-                    module_id = chassis_id
-                    chassis_id = chassis.relative_address.native_index
-
-                    sub_module_ids = [chassis_id]
-                    sub_module_ids.extend(ids)
-                    sub_module = self._get_physical_module(sub_module_ids)
-                    if sub_module:
-                        return sub_module
-                    parent_module = self._get_physical_module(
-                        f"{chassis_id}-{module_id}"
-                    )
-                    if not parent_module:
-                        parent_module = self.generate_module(chassis, module_id)
-                    return self.generate_sub_module(parent_module, sub_module_ids)
-
-            return parent_module
-        elif len(ids) == 3:
-            chassis_id, module_id, sub_module_id = ids
-            parent = self._physical_table_service.physical_modules_ids_dict.get(
-                f"{chassis_id}-{module_id}-{sub_module_id}"
-            )
-            if not parent:
-                chassis = self._get_chassis(chassis_id)
-                if not chassis:
-                    raise Exception("Unknown modules detected")
-                chassis_id = chassis.relative_address.native_index
-                sub_module_ids = f"{chassis_id}-{module_id}-{sub_module_id}"
-                sub_module = self._get_physical_module(sub_module_ids)
-                if sub_module:
-                    return sub_module
-                parent_module = self._get_physical_module(f"{chassis_id}-{module_id}")
-                if not parent_module:
-                    parent_module = self.generate_module(chassis, module_id)
-                sub_module_id = [chassis_id]
-                sub_module_id.extend(ids[1:])
-                parent = self.generate_sub_module(parent_module, sub_module_id)
-            else:
-                parent = parent[0]
-        return parent
-
-    def _get_physical_module(self, module_id):
-        module = self.port_id_to_module_map.get(module_id)
-        if module:
-            return module
-        module = self._physical_table_service.physical_modules_ids_dict.get(module_id)
-        if module:
-            return module[0]
-
-    def _get_chassis(self, chassis_id):
-        chassis = self._physical_table_service.chassis_ids_dict.get(chassis_id)
-        if not chassis:
-            if len(self._physical_table_service.chassis_ids_dict) == 1:
-                chassis = next(
-                    (
-                        chassis
-                        for _, chassis in self._physical_table_service.chassis_ids_dict.items()
-                    ),
-                    None,
-                )
-        return chassis
-
-    def generate_module(self, parent_module, module_id):
+    def generate_module(self, module_id):
         module_object = self._resource_model.entities.Module(index=module_id)
-        # self._physical_table_service.physical_modules_ids_dict[
-        #     module_id
-        # ].append(module_object)
-        module_object.relative_address.parent_node = parent_module.relative_address
-        parent_module.extract_sub_resources().append(module_object)
-        self._physical_table_service.physical_modules_ids_dict[module_id].append(
-            module_object
-        )
         return module_object
 
-    def generate_sub_module(self, parent_module, port_ids_list):
-        chassis = port_ids_list[0]
-        module_id = port_ids_list[1]
-        sub_module = port_ids_list[2]
-        sub_module_id = f"{chassis}-" f"{module_id}-" f"{sub_module}"
-
-        module_object = self._resource_model.entities.SubModule(index=sub_module)
-        self._physical_table_service.physical_modules_ids_dict[sub_module_id].append(
-            module_object
-        )
-        module_object.relative_address.parent_node = parent_module.relative_address
-        parent_module.extract_sub_resources().append(module_object)
+    def generate_sub_module(self, module_id):
+        module_object = self._resource_model.entities.SubModule(index=module_id)
         return module_object

@@ -1,6 +1,5 @@
 import re
 from collections import defaultdict
-from functools import lru_cache
 from logging import Logger
 
 from cloudshell.snmp.autoload.helper.chassis_helper import ChassisHelper
@@ -23,7 +22,7 @@ class PhysicalTable:
         self._port_list = []
         self._power_port_dict = {}
         self._chassis_dict = {}
-        self._modules_dict = {}
+        self.parent_dict = {}
         self.port_parent_dict = {}
         self._modules_hierarchy_dict = defaultdict(list)
         self.chassis_ids_dict = {}
@@ -47,24 +46,6 @@ class PhysicalTable:
         return self._power_port_dict
 
     @property
-    @lru_cache()
-    def physical_modules_ids_dict(self):
-        if not self._modules_dict:
-            self._get_entity_table()
-
-        if not self._modules_hierarchy_dict:
-            indexes = list(self._modules_dict.keys())
-            indexes.sort()
-            indexes.reverse()
-            for module_index in indexes:
-                ids = self._build_module_ids(module_index)
-                if not ids:
-                    continue
-                module = self.physical_structure_table.get(module_index)
-                self._modules_hierarchy_dict[ids].append(module)
-        return self._modules_hierarchy_dict
-
-    @property
     def physical_chassis_dict(self):
         if not self._chassis_dict:
             self._get_entity_table()
@@ -77,17 +58,6 @@ class PhysicalTable:
         if not self._physical_structure_table:
             self._get_entity_table()
         return self._physical_structure_table
-
-    def _build_module_ids(self, entity_id):
-        module_ids = []
-        while entity_id:
-            module = self.physical_structure_table.get(entity_id)
-            if not module:
-                return
-            module_ids.append(module.relative_address.native_index)
-            entity_id = self._modules_dict.get(entity_id)
-        module_ids.reverse()
-        return "-".join(module_ids)
 
     def _get_entity_table(self):
         """Read Entity-MIB and filter out device's structure and all it's elements.
@@ -116,8 +86,6 @@ class PhysicalTable:
             self._add_power_port(entity)
         elif "chassis" in entity_class.lower():
             self._add_chassis(entity)
-        elif "module" in entity_class.lower():
-            self._add_module(entity)
 
     def _add_chassis(self, entity):
         index = "0" if entity.position_id == "-1" else entity.position_id
@@ -135,7 +103,7 @@ class PhysicalTable:
             None,
         )
         if duplicate_chassis:
-            chassis_object = duplicate_chassis
+            return
 
         self._logger.debug(f"Discovered a Chassis: {entity.model}")
         self._chassis_dict[entity.index] = chassis_object
@@ -150,11 +118,14 @@ class PhysicalTable:
             index=entity.index, name=name.replace("/", "-")
         )
         parent_module = self.find_parent_module(entity.index)
+
         port_object.port_description = entity.description
         self._logger.debug(f"Discovered a Port: {entity.model}")
         self._physical_structure_table[entity.index] = port_object
         self._port_list.append(entity.index)
-        self.port_parent_dict[entity.index] = parent_module.index
+        if not parent_module:
+            return
+        self.parent_dict[port_object] = parent_module.index
 
     def _add_power_port(self, entity):
         power_port_object = self._resource_model.entities.PowerPort(
@@ -170,6 +141,8 @@ class PhysicalTable:
     def _find_parent_containers(self, entity_id):
         parent_index = self.entity_table.physical_structure_table.get(entity_id)
         parent = self.load_entity(parent_index)
+        if not parent.entity_row_response:
+            return
         entity_class = self.chassis_helper.get_physical_class(parent)
         if entity_class in ["container", "backplane"]:
             return parent
@@ -182,21 +155,24 @@ class PhysicalTable:
     def find_parent_module(self, entity_id):
         parent_index = self.entity_table.physical_structure_table.get(entity_id)
         if not parent_index:
-            raise Exception("Error loading parent entity")
+            return
         parent = self.load_entity(parent_index)
-        entity_class = self.chassis_helper.get_physical_class(parent)
         if not parent.entity_row_response:
             return
+        entity_class = self.chassis_helper.get_physical_class(parent)
         if "module" in entity_class and not self.module_exclude_pattern.search(
             parent.vendor_type
         ):
             return parent
-        elif "chassis" in entity_class:
+        if "chassis" in entity_class:
             return parent
         else:
             return self.find_parent_module(parent_index)
 
-    def _add_module(self, entity: BaseEntity):
+    def create_module(self, entity_index: str):
+        entity = self.load_entity(entity_index)
+        if not entity.entity_row_response:
+            return
         if self.module_exclude_pattern and self.module_exclude_pattern.search(
             entity.vendor_type
         ):
@@ -217,7 +193,8 @@ class PhysicalTable:
         module_object.serial_number = entity.serial_number
         self._physical_structure_table[entity.index] = module_object
         self._logger.debug(f"Discovered a Module: {entity.model}")
-        self._modules_dict[entity.index] = parent_module_index
+        self.parent_dict[module_object] = parent_module_index
+        return module_object
 
     def get_parent_chassis(self, entity_id):
         parent_index = self.entity_table.physical_structure_table.get(entity_id)

@@ -1,5 +1,3 @@
-import re
-
 from cloudshell.snmp.autoload.helper.module_helper import ModuleHelper
 from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 
@@ -23,7 +21,6 @@ class PortHelper:
         )
         self._logger = logger
         self._identified_ports = []
-        self._port_parent_ids_to_module_map = {}
 
     def build_ports_structure(self):
         """Get ports data.
@@ -69,7 +66,7 @@ class PortHelper:
             port_if_entity = self._port_table_service.load_if_port(if_index)
             port_id = port_if_entity.port_id
             port_ids = ""
-            if "-" in port_id:
+            if port_id and "-" in port_id:
                 port_ids = port_id[: port_id.rfind("-")]
 
             if len(port_ids.split("-")) > 3:
@@ -80,13 +77,8 @@ class PortHelper:
                 self._identified_ports.append(if_index)
                 continue
 
-            parent = self._module_helper.attach_port_to_parent(
-                phys_port, if_port, port_ids
-            )
-            if not parent:
-                continue
+            self._module_helper.attach_port_to_parent(phys_port, if_port, port_ids)
             self._identified_ports.append(if_index)
-            self._update_port_to_module_map(port_ids, parent)
 
     def _load_ports_from_if_table(self):
         for if_index, interface in self._port_table_service.ports_dict.items():
@@ -118,16 +110,15 @@ class PortHelper:
                         phys_port_index
                     )
                     if self._is_valid_port(phys_port_entity):
-                        parent = self._module_helper.attach_port_to_parent(
+                        self._module_helper.attach_port_to_parent(
                             entity_port, interface, port_ids
                         )
-
-                        self._update_port_to_module_map(port_ids, parent)
                         self._identified_ports.append(if_index)
                         continue
                     else:
                         continue
-            self._guess_port_parent(port_id, interface)
+            parent = self._module_helper.get_parent_module(port_ids)
+            parent.connect_port(interface)
             self._identified_ports.append(if_index)
 
     def _load_ports_from_physical_table(self):
@@ -138,20 +129,6 @@ class PortHelper:
             if parent:
                 parent.connect_port(phys_port)
 
-    def _guess_port_parent(self, port_ids, interface):
-        if "-" not in port_ids:
-            self._add_port_to_chassis(interface, port_ids)
-            return
-        port_parent_id = port_ids[: port_ids.rfind("-")]
-        if len(port_ids.split("-")) > 4:
-            port_parent_id = port_parent_id[: port_parent_id.rfind("-")]
-        parent = self._module_helper.get_parent_entity_by_ids(port_parent_id)
-        if parent:
-            parent.connect_port(interface)
-            self._update_port_to_module_map(port_parent_id, parent)
-        else:
-            self._add_port_to_chassis(interface, port_ids)
-
     def _is_valid_port(self, entity_port: BaseEntity):
         result = True
         if self._port_table_service.is_wrong_port(entity_port.name):
@@ -159,20 +136,6 @@ class PortHelper:
         if self._port_table_service.is_wrong_port(entity_port.description):
             result = False
         return result
-
-    def _update_port_to_module_map(self, port_parent_id, parent):
-        if (
-            port_parent_id not in self._module_helper.port_id_to_module_map
-            and not parent.name.lower().startswith("chassis")
-        ):
-            self._module_helper.port_id_to_module_map[port_parent_id] = parent
-            parent_id_list = port_parent_id.split("-")
-            rel_address_match = re.findall(r"\d+", str(parent.relative_address))
-            if not rel_address_match:
-                return
-            rel_address = "-".join(rel_address_match)
-            if len(parent_id_list) > 1 and rel_address != port_parent_id:
-                self._module_helper.port_id_to_module_map[rel_address] = parent
 
     def _add_port_to_chassis(self, interface, port_id):
         """Add port to chassis."""

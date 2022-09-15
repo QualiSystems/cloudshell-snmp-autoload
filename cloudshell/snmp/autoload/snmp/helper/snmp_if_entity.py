@@ -14,7 +14,7 @@ from cloudshell.snmp.autoload.constants.port_constants import (
 
 class SnmpIfEntity:
     IF_TYPE_REPLACE_PATTERN = re.compile("^[/']|[/']$")
-    PORT_IDS_PATTERN = re.compile(r"\d+(/\d+)*$", re.IGNORECASE)
+    PORT_IDS_PATTERN = re.compile(r"\d+(/\d+)*(\D\d+)*$", re.IGNORECASE)
 
     def __init__(self, port_index, port_row):
         self.if_index = port_index
