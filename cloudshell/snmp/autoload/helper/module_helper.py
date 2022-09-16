@@ -88,7 +88,7 @@ class ModuleHelper:
 
                 parent = self._convert_module_to_sub_module(parent)
         else:
-            pass
+            self._logger.warning(f"No module parent found for port {port_id}")
         if len(self._physical_table_service.physical_chassis_dict.items()) == 1:
             chassis = list(self._physical_table_service.physical_chassis_dict.values())[
                 0
@@ -145,24 +145,6 @@ class ModuleHelper:
         if module:
             modules_ids.append(module.relative_address.native_index)
         return modules_ids
-
-    def _get_module_from_module_map(self, port_parent_id):
-        parent = self.port_id_to_module_map.get(port_parent_id)
-        parent_ids = self._get_port_parent_ids_list(port_parent_id)
-        if (
-            not parent
-            and len(parent_ids) > 2
-            and parent_ids[0] not in self._physical_table_service.physical_chassis_dict
-        ):
-            if len(self._physical_table_service.physical_chassis_dict.items()) == 1:
-                chassis = list(
-                    self._physical_table_service.physical_chassis_dict.values()
-                )[0]
-                new_parent_ids = [chassis]
-                new_parent_ids.extend(parent_ids[1:])
-                new_parent_id = "-".join(new_parent_ids)
-                parent = self.port_id_to_module_map.get(new_parent_id)
-        return parent
 
     def _update_port_to_module_map(self, port_parent_id, parent):
         if (
@@ -250,14 +232,6 @@ class ModuleHelper:
         else:
             port_ids = [port_id]
         return port_ids
-
-    def _get_parent_id_from_relative_path(self, relative_path):
-        parent_ids = []
-        while relative_path.parent_node:
-            parent_ids.append(relative_path.native_index)
-            relative_path = relative_path.parent_node
-        parent_ids.reverse()
-        return parent_ids
 
     def get_entity_parent_entity(self, entity):
         parent_index = self._physical_table_service.parent_dict.get(entity)

@@ -5,10 +5,7 @@ from cloudshell.snmp.autoload.constants.entity_constants import (
 from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 
 
-class ChassisHelper:
-    def __init__(self):
-        pass
-
+class EntityHelper:
     def get_physical_class(self, entity: BaseEntity):
         if ENTITY_TO_CONTAINER_PATTERN.search(entity.vendor_type):
             return "container"

@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from logging import Logger
 
-from cloudshell.snmp.autoload.helper.chassis_helper import ChassisHelper
+from cloudshell.snmp.autoload.helper.entity_helper import EntityHelper
 from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
 
@@ -26,7 +26,7 @@ class PhysicalTable:
         self.port_parent_dict = {}
         self._modules_hierarchy_dict = defaultdict(list)
         self.chassis_ids_dict = {}
-        self.chassis_helper = ChassisHelper()
+        self.chassis_helper = EntityHelper()
 
     @property
     def module_exclude_pattern(self):

@@ -136,18 +136,3 @@ class PortHelper:
         if self._port_table_service.is_wrong_port(entity_port.description):
             result = False
         return result
-
-    def _add_port_to_chassis(self, interface, port_id):
-        """Add port to chassis."""
-        parent_element = None
-        ids = port_id.split("-")
-        if len(self._chassis) > 1:
-            if port_id and ids > 1:
-                chassis_id = ids[0]
-                parent_element = self._chassis.get(chassis_id, None)
-        if not parent_element:
-            if not self._chassis:
-                raise Exception("Unable to find chassis")
-
-        parent_element = next(iter(self._chassis.values()))
-        parent_element.connect_port(interface)
