@@ -17,5 +17,5 @@ class SnmpPortMappingTable:
                 if_index = item.safe_value.replace("IF-MIB::ifIndex.", "")
                 index = item.index[: item.index.rfind(".")]
                 port_map[if_index] = index
-        sorted(port_map)
+        port_map = dict(sorted(port_map.items()))
         return port_map

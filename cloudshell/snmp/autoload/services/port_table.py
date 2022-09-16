@@ -85,7 +85,7 @@ class PortsTable:
         """
         if not self._if_port_dict:
             self._get_if_entities()
-            sorted(self._if_port_dict)
+            self._if_port_dict = dict(sorted(self._if_port_dict.items()))
         return self._if_port_dict
 
     @property
