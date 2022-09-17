@@ -88,7 +88,7 @@ class PortHelper:
             port_if_entity = self._port_table_service.load_if_port(if_index)
             sec_name = port_if_entity.if_descr_name
             port_id = port_if_entity.port_id
-            if not port_id:
+            if port_id is None:
                 self._identified_ports.append(if_index)
                 continue
             port_ids = port_id[: port_id.rfind("-")]

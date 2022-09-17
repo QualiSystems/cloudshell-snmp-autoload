@@ -75,9 +75,8 @@ class PortMappingService:
                 port_pattern = re.compile(
                     rf"^\S*\D*[^-]{if_table_re}(/\D+|$)", re.IGNORECASE
                 )
-                if port_pattern.search(port_name):
-                    if port:
-                        return port
+                if port_pattern.search(port_name) and port:
+                    return port
 
     def _drop_mapped_port(self, port):
         if port and port.name.lower() in self._physical_port_dict:

@@ -61,8 +61,7 @@ class PortNeighbours(PortAttributesServiceInterface):
                     remote_host=remote_sys_name,
                     remote_port=remote_port_name,
                 )
-        if not lldp_rem_table:
-            return
+
         for lldp_loc_id, lldp_loc_data in self._lldp_loc_snmp_table.items():
             if lldp_loc_id not in lldp_rem_table:
                 continue

@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 from logging import Logger
 
+from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.entity_helper import EntityHelper
 from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
@@ -199,7 +200,7 @@ class PhysicalTable:
     def get_parent_chassis(self, entity_id):
         parent_index = self.entity_table.physical_structure_table.get(entity_id)
         if not parent_index:
-            raise Exception("Error loading parent entity")
+            raise GeneralAutoloadError("Error loading parent entity")
         parent = self.load_entity(parent_index)
         entity_class = self.chassis_helper.get_physical_class(parent)
         if "chassis" in entity_class:

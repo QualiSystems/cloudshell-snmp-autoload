@@ -47,24 +47,24 @@ class TestPhysicalTable(TestCase):
         return SnmpEntityTable(snmp, self._logger)
 
     def test_get_parent_entity_by_ids_known_1_module(self):
-        result = self._create_module_helper().get_parent_entity_by_ids("0-8")
-        assert str(result.relative_address) == "CH0/M8"
+        result = self._create_module_helper().get_parent_module("0-8")
+        assert str(result.relative_address) == "CH0/M0/SM8"
 
     def test_get_parent_entity_by_ids_known_2_modules(self):
         module_helper = self._create_module_helper()
-        result = module_helper.get_parent_entity_by_ids("0-8-1")
+        result = module_helper.get_parent_module("0-8-1")
         assert str(result.relative_address) == "CH0/M8/SM1"
 
     def test_get_parent_entity_by_ids_unknown_2_modules(self):
-        result = self._create_module_helper().get_parent_entity_by_ids("0-9-1")
+        result = self._create_module_helper().get_parent_module("0-9-1")
         assert str(result.relative_address) == "CH0/M9/SM1"
 
     def test_get_parent_entity_by_ids_known_1_module_no_chassis(self):
-        result = self._create_module_helper().get_parent_entity_by_ids("8")
+        result = self._create_module_helper().get_parent_module("8")
         assert str(result.relative_address) == "CH0/M8"
 
     def test_get_parent_entity_by_ids_unknown_2_modules_no_chassis(self):
-        result = self._create_module_helper().get_parent_entity_by_ids("9-1")
+        result = self._create_module_helper().get_parent_module("9-1")
         assert str(result.relative_address) == "CH0/M9/SM1"
 
     def test_attach_port_to_parent(self):
@@ -72,29 +72,8 @@ class TestPhysicalTable(TestCase):
         module_helper = self._create_module_helper()
         interface = GenericPort("4324")
         entity_port = GenericPort("4105")
-        result = module_helper.attach_port_to_parent(
+        module_helper.attach_port_to_parent(
             entity_port=entity_port, if_port=interface, port_id="8-0"
         )
-        assert str(result.relative_address) == "CH0/M8/SM0"
+        assert str(interface.relative_address.parent_node) == "CH0/M8/SM0"
         assert str(interface.relative_address) == "CH0/M8/SM0/P4324"
-
-    def test_detect_and_connect_parent_sm(self):
-        _ = self.table.physical_structure_table
-        module_helper = self._create_module_helper()
-        parent = self.table.physical_structure_table.get("4015")
-        result = module_helper.detect_and_connect_parent(parent, port_ids="8-0")
-        assert str(result.relative_address) == "CH0/M8/SM0"
-
-    def test_detect_and_connect_parent(self):
-        _ = self.table.physical_structure_table
-        module_helper = self._create_module_helper()
-        parent = self.table.physical_structure_table.get("4000")
-        result = module_helper.detect_and_connect_parent(parent, port_ids="8")
-        assert str(result.relative_address) == "CH0/M8"
-
-    def test_detect_and_connect_parent_model_wrong_id(self):
-        _ = self.table.physical_structure_table
-        module_helper = self._create_module_helper()
-        parent = self.table.physical_structure_table.get("4000")
-        result = module_helper.detect_and_connect_parent(parent, port_ids="2-0")
-        assert str(result.relative_address) == "CH0/M2/SM0"

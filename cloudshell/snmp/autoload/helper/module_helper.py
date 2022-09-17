@@ -212,12 +212,15 @@ class ModuleHelper:
             return entity
 
     def _has_same_module_id(self, module, module_id):
-        if module and module_id:
-            if (
+        if (
+            module
+            and module_id
+            and (
                 "module" in module.name.lower()
                 and module.relative_address.native_index == module_id
-            ):
-                return True
+            )
+        ):
+            return True
         return False
 
     def attach_port_to_parent(self, entity_port, if_port, port_id):

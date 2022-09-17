@@ -11,7 +11,6 @@ class PortsTable:
     ALLOWED_PORT_CHANNEL_MODEL_NAME = ["GenericPortChannel"]
     PORT_CHANNEL_NAME_LIST = [r"^ae\d+", r"^port-channel\d+", r"^bundle-ether\d+"]
     PORT_NAME_LIST = []
-    # ToDo clean Port Channel name list before release
     PORT_CHANNEL_VALID_TYPE_LIST = [r"ieee8023adLag", r"propVirtual", r"other"]
     PORT_VALID_TYPE_LIST = [
         r"ethernet|other|propPointToPointSerial",
