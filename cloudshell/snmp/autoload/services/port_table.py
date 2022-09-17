@@ -1,6 +1,7 @@
 import re
 from functools import lru_cache
 from logging import Logger
+from typing import Dict
 
 from cloudshell.snmp.autoload.snmp.helper.snmp_if_entity import SnmpIfEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
@@ -76,11 +77,12 @@ class PortsTable:
         return re.compile(port_channel_valid, re.IGNORECASE)
 
     @property
-    def ports_dict(self):
-        # ToDo Add a brief description of returned structure.
-        """{index: port object} dict.
+    def ports_dict(self) -> Dict[str, object]:
+        """Port index to Port object map.
 
-        :return:
+        Port object is the one defined in the standard's resource_model.
+        Usually, ifIndex is used by various vendors as a mapping key, between
+        interface table and other tables. Including Physical structure table.
         """
         if not self._if_port_dict:
             self._get_if_entities()
@@ -88,8 +90,13 @@ class PortsTable:
         return self._if_port_dict
 
     @property
-    def port_channels_dict(self):
-        # ToDo Add a brief description of returned structure.
+    def port_channels_dict(self) -> Dict[str, object]:
+        """Port index to Port Channel object map.
+
+        Port Channel object is the one defined in the standard's resource_model.
+        Usually, ifIndex is used by various vendors as a mapping key, between
+        interface table and other tables.
+        """
         if not self._if_port_channels_dict:
             self._get_if_entities()
         return self._if_port_channels_dict
