@@ -62,8 +62,9 @@ class TestPhysicalTable(TestCase):
         result = self.table.physical_structure_table
         assert result is not None
         assert len(self.table.physical_ports_list) == 6
+        assert len(self.table.parent_dict) == 6
+        assert all(self.table.parent_dict.get(x) for x in self.table.parent_dict)
         assert len(self.table._chassis_dict) == 1
         assert len(self.table._chassis_dict) == 1
         assert len(self.table.physical_chassis_dict) == 1
-        assert len(self.table.physical_modules_ids_dict) == 10
         assert len(self.table.physical_power_ports_dict) == 1

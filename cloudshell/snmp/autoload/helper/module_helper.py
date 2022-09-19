@@ -89,11 +89,20 @@ class ModuleHelper:
                 parent = self._convert_module_to_sub_module(parent)
         else:
             self._logger.warning(f"No module parent found for port {port_id}")
-        if len(self._physical_table_service.physical_chassis_dict.items()) == 1:
-            chassis = list(self._physical_table_service.physical_chassis_dict.values())[
-                0
-            ]
-        else:
+
+        return self._update_structure(
+            entity=entity,
+            chassis=chassis,
+            port_id=port_id,
+            parent_id=parent_id,
+            module_parent=module_parent,
+            parent=parent,
+        )
+
+    def _update_structure(
+        self, entity, chassis, port_id, parent_id, module_parent=None, parent=None
+    ):
+        if len(self._physical_table_service.physical_chassis_dict.items()) > 1:
             detected_chassis = self.get_entity_parent_entity(entity)
             while detected_chassis and not detected_chassis.name.lower().startswith(
                 "chassis"

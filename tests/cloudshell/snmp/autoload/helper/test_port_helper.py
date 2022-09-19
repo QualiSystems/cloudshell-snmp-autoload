@@ -58,7 +58,7 @@ class TestPortHelper(TestCase):
     def test_is_not_valid_mgmt_port(self):
         interface = Mock()
         interface.name = "mgmt"
-        interface.port_description = "GigabitEthernet0/0"
+        interface.description = "GigabitEthernet0/0"
         port_helper = self._create_port_helper()
 
         result = port_helper._is_valid_port(interface)
@@ -66,7 +66,7 @@ class TestPortHelper(TestCase):
 
     def test_is_not_valid_mgmt_port_descr(self):
         interface = Mock()
-        interface.port_description = "mgmt"
+        interface.description = "mgmt"
         interface.name = "GigabitEthernet0/0"
         port_helper = self._create_port_helper()
 
