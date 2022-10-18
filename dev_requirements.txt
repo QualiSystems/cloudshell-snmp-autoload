@@ -2,5 +2,4 @@ pre-commit
 tox
 tox-factor
 -r test_requirements.txt
-
--e git+https://github.com/QualiSystems/cloudshell-snmp.git@dev#egg=cloudshell-snmp
+-r requirements.txt

@@ -3,11 +3,12 @@ from ipaddress import AddressValueError, IPv4Address, IPv6Address
 from logging import Logger
 from threading import Thread
 
+from cloudshell.snmp.core.snmp_service import SnmpService
+
 from cloudshell.snmp.autoload.constants import port_constants
 from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_interface import (
     PortAttributesServiceInterface,
 )
-from cloudshell.snmp.core.snmp_service import SnmpService
 
 
 class PortIPTables(PortAttributesServiceInterface):
@@ -21,7 +22,7 @@ class PortIPTables(PortAttributesServiceInterface):
         self._ipv6_snmp_table = {}
         self._thread_list = []
 
-    def load_snmp_tables(self):
+    def load_snmp_table(self):
         self._ipv4_snmp_table = self._snmp.walk(port_constants.PORT_OLD_IP_INDEXES)
         if self._ipv4_snmp_table:
             self._thread_list.append(
@@ -48,7 +49,7 @@ class PortIPTables(PortAttributesServiceInterface):
                     name="IPv6 converter",
                 )
             )
-        map(lambda thread: thread.start, self._thread_list)
+        [thread.start() for thread in self._thread_list]
 
     def _convert_ipv4_table(self):
         for ip in self._ipv4_snmp_table:
@@ -96,13 +97,13 @@ class PortIPTables(PortAttributesServiceInterface):
         )
 
     def get_all_ipv4_by_index(self, port_index):
-        map(lambda thread: thread.join, self._thread_list)
+        [thread.join() for thread in self._thread_list]
         ip_addresses = self._ipv4_table.get(port_index)
         if ip_addresses:
             return ", ".join(ip_addresses)
 
     def get_all_ipv6_by_index(self, port_index):
-        map(lambda thread: thread.join, self._thread_list)
+        [thread.join() for thread in self._thread_list]
         ip_addresses = self._ipv6_table.get(port_index)
         if ip_addresses:
             return ", ".join(ip_addresses)

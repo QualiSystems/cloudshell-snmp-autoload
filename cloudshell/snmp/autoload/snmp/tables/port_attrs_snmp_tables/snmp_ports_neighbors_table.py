@@ -3,11 +3,12 @@ from collections import defaultdict
 from logging import Logger
 from threading import Thread
 
+from cloudshell.snmp.core.snmp_service import SnmpService
+
 from cloudshell.snmp.autoload.constants import port_constants
 from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_interface import (
     PortAttributesServiceInterface,
 )
-from cloudshell.snmp.core.snmp_service import SnmpService
 
 
 class PortNeighbours(PortAttributesServiceInterface):
@@ -33,7 +34,7 @@ class PortNeighbours(PortAttributesServiceInterface):
             self.PORT_NAME_PATTERN.format(name=port_name), port_search, re.IGNORECASE
         )
 
-    def load_snmp_tables(self):
+    def load_snmp_table(self):
         self._lldp_loc_snmp_table = self._snmp.get_multiple_columns(
             port_constants.PORT_LLDP_LOC_TABLE
         )
@@ -97,38 +98,13 @@ class PortNeighbours(PortAttributesServiceInterface):
         :return: device's name and port connected to port id
         :rtype string
         """
+        [thread.join() for thread in self._thread_list]
         if self.LLDP_LOC_INTERFACE_NAME in self._adjacent_table:
-            result = self._adjacent_table.get(self.LLDP_LOC_INTERFACE_NAME, {}).get(
-                port.if_name
-            ) or self._adjacent_table.get(self.LLDP_LOC_INTERFACE_NAME, {}).get(
-                port.if_descr_name
-            )
-            if result and result not in self._used_adjacent_entries:
-                self._used_adjacent_entries.append(result)
-                return result
+            return self._get_adjacent_by_port_name(port)
         elif self.LLDP_LOC_NETWORK_ADDR in self._adjacent_table:
-            if port_object.ipv4_address:
-                result = self._adjacent_table.get(self.LLDP_LOC_NETWORK_ADDR, {}).get(
-                    port_object.ipv4_address
-                )
-                if result and result not in self._used_adjacent_entries:
-                    self._used_adjacent_entries.append(result)
-                    return result
-            if port_object.ipv6_address:
-                result = self._adjacent_table.get(self.LLDP_LOC_NETWORK_ADDR, {}).get(
-                    port_object.ipv6_address
-                )
-                if result and result not in self._used_adjacent_entries:
-                    self._used_adjacent_entries.append(result)
-                    return result
+            return self._get_adjacent_by_ip(port_object)
         elif self.LLDP_LOC_MAC_ADDR in self._adjacent_table:
-            if port_object.mac_address:
-                result = self._adjacent_table.get(self.LLDP_LOC_MAC_ADDR, {}).get(
-                    port_object.mac_address
-                )
-                if result and result not in self._used_adjacent_entries:
-                    self._used_adjacent_entries.append(result)
-                    return result
+            return self._get_adjacent_by_mac(port_object)
         for lldp_data in self._adjacent_table.values():
             lldp_rem_str = lldp_data.get(port.if_descr_name.replace("-", "/"))
             if not lldp_rem_str:
@@ -140,6 +116,41 @@ class PortNeighbours(PortAttributesServiceInterface):
                 if self.check_port_name(lldp_rem_key, lldp_rem_data, port):
                     self._used_adjacent_entries.append(lldp_rem_data)
                     return lldp_rem_data
+
+    def _get_adjacent_by_ip(self, port_object):
+        if port_object.ipv4_address:
+            result = self._adjacent_table.get(self.LLDP_LOC_NETWORK_ADDR, {}).get(
+                port_object.ipv4_address
+            )
+            if result and result not in self._used_adjacent_entries:
+                self._used_adjacent_entries.append(result)
+                return result
+        if port_object.ipv6_address:
+            result = self._adjacent_table.get(self.LLDP_LOC_NETWORK_ADDR, {}).get(
+                port_object.ipv6_address
+            )
+            if result and result not in self._used_adjacent_entries:
+                self._used_adjacent_entries.append(result)
+                return result
+
+    def _get_adjacent_by_mac(self, port_object):
+        if port_object.mac_address:
+            result = self._adjacent_table.get(self.LLDP_LOC_MAC_ADDR, {}).get(
+                port_object.mac_address
+            )
+            if result and result not in self._used_adjacent_entries:
+                self._used_adjacent_entries.append(result)
+                return result
+
+    def _get_adjacent_by_port_name(self, port):
+        result = self._adjacent_table.get(self.LLDP_LOC_INTERFACE_NAME, {}).get(
+            port.if_name
+        ) or self._adjacent_table.get(self.LLDP_LOC_INTERFACE_NAME, {}).get(
+            port.if_descr_name
+        )
+        if result and result not in self._used_adjacent_entries:
+            self._used_adjacent_entries.append(result)
+            return result
 
     def check_port_name(self, lldp_rem_key, lldp_rem_data, port_object):
         lldp_port_name = lldp_rem_key.replace("/", "-")

@@ -1,6 +1,7 @@
 import re
 
 from cloudshell.shell.flows.autoload.autoload_utils import get_device_name
+
 from cloudshell.snmp.autoload.snmp.helper.snmpv2_data import SnmpV2MibData
 
 
@@ -91,7 +92,7 @@ class SnmpSystemInfo:
         """
         if not self._vendor:
             sys_obj_id = self._snmp_v2_obj.get_system_object_id()
-            sys_obj_id_oid = ".".join(map(str, sys_obj_id.raw_value))
+            sys_obj_id_oid = str(sys_obj_id.raw_value)
             oid_match = self.VENDOR_OID_PATTERN.search(sys_obj_id_oid)
             if oid_match:
                 self._vendor = self._snmp_handler.translate_oid(
@@ -130,14 +131,18 @@ class SnmpSystemInfo:
 
         raw_model = self._get_device_model()
         model = re.sub(rf"^{vendor}", "", raw_model, flags=re.IGNORECASE)
-        resource.model = model
-        resource.model_name = self._get_model_name(raw_model)
+        resource.model = model.capitalize()
+        resource.model_name = self._get_model_name(raw_model, vendor)
 
         self._logger.info("Building Root completed")
 
-    def _get_model_name(self, model):
+    def _get_model_name(self, model, vendor=None):
+        result = model
         if self._device_model_map_path:
-            return (
+            result = (
                 get_device_name(file_name=self._device_model_map_path, sys_obj_id=model)
                 or model
             )
+        if result == model and vendor and model.lower().startswith(vendor.lower()):
+            result = f"{vendor.capitalize()} {model[len(vendor):].capitalize()}"
+        return result

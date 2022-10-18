@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock
 
 from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
+
 from cloudshell.snmp.autoload.services.port_table import PortsTable
 from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
 

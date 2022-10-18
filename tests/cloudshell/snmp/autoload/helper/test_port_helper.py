@@ -2,11 +2,12 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
+from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
+
 from cloudshell.snmp.autoload.helper.port_helper import PortHelper
 from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTable
 from cloudshell.snmp.autoload.services.port_table import PortsTable
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
-from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
 
 from tests.cloudshell.snmp.autoload.data.physical_entities_data import (
     MOCK_SNMP_RESPONSE,

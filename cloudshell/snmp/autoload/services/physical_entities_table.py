@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 from logging import Logger
+from threading import Thread
 
 from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.entity_helper import EntityHelper
@@ -28,6 +29,11 @@ class PhysicalTable:
         self._modules_hierarchy_dict = defaultdict(list)
         self.chassis_ids_dict = {}
         self.chassis_helper = EntityHelper()
+        self._snmp_physical_structure_table = (
+            self.entity_table.physical_structure_snmp_table
+        )
+        self._thread = Thread(target=self._get_entity_table)
+        self._thread.start()
 
     @property
     def module_exclude_pattern(self):
@@ -36,28 +42,24 @@ class PhysicalTable:
 
     @property
     def physical_ports_list(self):
-        if not self._port_list:
-            self._get_entity_table()
+        self._thread.join()
         return self._port_list
 
     @property
     def physical_power_ports_dict(self):
-        if not self._power_port_dict:
-            self._get_entity_table()
+        self._thread.join()
         return self._power_port_dict
 
     @property
     def physical_chassis_dict(self):
-        if not self._chassis_dict:
-            self._get_entity_table()
+        self._thread.join()
         if not self._chassis_dict:
             self._add_dummy_chassis("0")
         return self._chassis_dict
 
     @property
     def physical_structure_table(self):
-        if not self._physical_structure_table:
-            self._get_entity_table()
+        self._thread.join()
         return self._physical_structure_table
 
     def _get_entity_table(self):
@@ -67,7 +69,7 @@ class PhysicalTable:
         :rtype: QualiMibTable
         :return: structured and filtered EntityPhysical table.
         """
-        for entity_index in self.entity_table.physical_structure_snmp_table:
+        for entity_index in self._snmp_physical_structure_table:
             if entity_index in self._physical_structure_table:
                 continue
             self._add_entity(entity_index)

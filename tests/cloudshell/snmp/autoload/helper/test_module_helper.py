@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 from cloudshell.shell.standards.autoload_generic_models import GenericPort
 from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
+
 from cloudshell.snmp.autoload.helper.module_helper import ModuleHelper
 from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTable
 

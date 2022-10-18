@@ -41,33 +41,33 @@ class SnmpPortsTable:
     @lru_cache()
     def port_ip_table(self):
         """Load all cisco required snmp tables."""
-        self._port_ip_tables.load_snmp_tables()
+        self._port_ip_tables.load_snmp_table()
         return self._port_ip_tables
 
     @property
     @lru_cache()
     def port_neighbors(self):
         """Load all cisco required snmp tables."""
-        self._port_neighbors.load_snmp_tables()
+        self._port_neighbors.load_snmp_table()
         return self._port_neighbors
 
     @property
     @lru_cache()
     def port_duplex(self):
         """Load all cisco required snmp tables."""
-        self._port_duplex.load_snmp_tables()
+        self._port_duplex.load_snmp_table()
         return self._port_duplex
 
     @property
     @lru_cache()
     def port_auto_neg(self):
         """Load all cisco required snmp tables."""
-        self._port_auto_neg.load_snmp_tables()
+        self._port_auto_neg.load_snmp_table()
         return self._port_auto_neg
 
     @property
     @lru_cache()
     def port_channel_associated_ports(self):
         """Load port channel members snmp tables."""
-        self._port_channel_associated_ports.load_snmp_tables()
+        self._port_channel_associated_ports.load_snmp_table()
         return self._port_channel_associated_ports

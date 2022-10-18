@@ -161,7 +161,9 @@ class PortsTable:
         port_object.duplex = self.ports_tables.port_duplex.get_duplex_by_port_index(
             port.if_index
         )
-        self.ports_tables.port_auto_neg.set_port_attributes(port_object)
+        port_object.auto_negotiation = (
+            self.ports_tables.port_auto_neg.get_value_by_index(port.if_index)
+        )
         port_object.adjacent = self.ports_tables.port_neighbors.get_adjacent_by_port(
             port_object, port
         )
@@ -183,7 +185,7 @@ class PortsTable:
         )
         if associated_port_list:
             port_channel_object.associated_ports = ", ".join(
-                [x.name for x in map(self._get_if_name_by_index, associated_port_list)]
+                [self._get_if_name_by_index(x) for x in associated_port_list]
             )
         port_channel_object.port_description = port.if_port_description
         port_channel_object.ipv4_address = (
@@ -195,10 +197,10 @@ class PortsTable:
         self._if_port_channels_dict[port.if_index] = port_channel_object
 
     def _get_if_name_by_index(self, if_index):
-        if if_index in self.ports_dict:
-            return self.ports_dict.get(if_index).name
+        if if_index in self._if_port_dict:
+            return self._if_port_dict.get(if_index).name
         snmp_port_data = self.load_if_port(if_index)
-        return snmp_port_data.if_name or snmp_port_data.if_descr_name
+        return snmp_port_data.port_name.replace("/", "-")
 
     def is_wrong_port(self, port_name):
         return self.port_exclude_re.search(port_name.lower())
