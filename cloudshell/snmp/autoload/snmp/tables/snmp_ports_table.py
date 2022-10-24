@@ -71,3 +71,10 @@ class SnmpPortsTable:
         """Load port channel members snmp tables."""
         self._port_channel_associated_ports.load_snmp_table()
         return self._port_channel_associated_ports
+
+    def finalize_threads(self):
+        self._port_ip_tables.finalize_thread()
+        self._port_neighbors.finalize_thread()
+        self._port_auto_neg.finalize_thread()
+        self._port_duplex.finalize_thread()
+        self._port_channel_associated_ports.finalize_thread()

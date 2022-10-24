@@ -11,11 +11,11 @@ from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_in
 
 class PortDuplex(PortAttributesServiceInterface):
     def __init__(self, snmp_service: SnmpService, logger: Logger):
+        super().__init__(snmp_service, logger)
         self._snmp = snmp_service
         self._logger = logger
         self._duplex_table = {}
         self._duplex_snmp_table = {}
-        self._thread_list = []
 
     def load_snmp_table(self):
         self._duplex_snmp_table = self._snmp.get_multiple_columns(

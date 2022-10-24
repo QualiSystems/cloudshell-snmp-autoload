@@ -1,3 +1,4 @@
+from contextlib import suppress
 from functools import lru_cache
 
 from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
@@ -117,24 +118,27 @@ class GenericSNMPAutoload:
         :param str supported_os:
         :return: AutoLoadDetails object
         """
-        if not self.system_info_service.is_valid_device_os(supported_os):
-            raise GeneralAutoloadError("Unsupported device OS")
+        try:
+            if not self.system_info_service.is_valid_device_os(supported_os):
+                raise GeneralAutoloadError("Unsupported device OS")
 
-        self.logger.info("*" * 70)
-        self.logger.info("Start SNMP discovery process .....")
-        self.system_info_service.fill_attributes(self._resource_model)
-        self._build_chassis()
-        self._build_power_ports()
-        self._build_ports_structure()
-        self._get_port_channels()
-        self.logger.info("SNMP discovery process finished successfully")
+            self.logger.info("*" * 70)
+            self.logger.info("Start SNMP discovery process .....")
+            self.system_info_service.fill_attributes(self._resource_model)
+            self._build_chassis()
+            self._build_power_ports()
+            self._build_ports_structure()
+            self._get_port_channels()
+            self.logger.info("SNMP discovery process finished successfully")
 
-        autoload_details = self._resource_model.build(
-            filter_empty_modules=True, use_new_unique_id=True
-        )
+            autoload_details = self._resource_model.build(
+                filter_empty_modules=True, use_new_unique_id=True
+            )
 
-        log_autoload_details(self.logger, autoload_details)
-        return autoload_details
+            log_autoload_details(self.logger, autoload_details)
+            return autoload_details
+        finally:
+            self._destroy_threads()
 
     def _build_power_ports(self):
         for (
@@ -193,3 +197,7 @@ class GenericSNMPAutoload:
             self.logger.info(f"Added {port_channel.name}")
 
         self.logger.info("Building Port Channels completed")
+
+    def _destroy_threads(self):
+        with suppress(Exception):
+            self.port_snmp_table.finalize_threads()

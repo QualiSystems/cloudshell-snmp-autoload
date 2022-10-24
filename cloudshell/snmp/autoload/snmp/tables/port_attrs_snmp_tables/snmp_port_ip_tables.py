@@ -13,6 +13,7 @@ from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_in
 
 class PortIPTables(PortAttributesServiceInterface):
     def __init__(self, snmp_service: SnmpService, logger: Logger):
+        super().__init__(snmp_service, logger)
         self._snmp = snmp_service
         self._logger = logger
         self._ipv4_table = defaultdict(list)
@@ -20,7 +21,6 @@ class PortIPTables(PortAttributesServiceInterface):
         self._ip_mixed_snmp_table = {}
         self._ipv6_table = defaultdict(list)
         self._ipv6_snmp_table = {}
-        self._thread_list = []
 
     def load_snmp_table(self):
         self._ipv4_snmp_table = self._snmp.walk(port_constants.PORT_OLD_IP_INDEXES)

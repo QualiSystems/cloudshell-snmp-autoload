@@ -11,11 +11,11 @@ from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_in
 
 class PortAutoNegotiation(PortAttributesServiceInterface):
     def __init__(self, snmp_service: SnmpService, logger: Logger):
+        super().__init__(snmp_service, logger)
         self._snmp = snmp_service
         self._logger = logger
         self._auto_negotiation = {}
         self._snmp_auto_negotiation = {}
-        self._thread_list = []
 
     def load_snmp_table(self):
         self._snmp_auto_negotiation = self._snmp.get_table(port_constants.PORT_AUTO_NEG)

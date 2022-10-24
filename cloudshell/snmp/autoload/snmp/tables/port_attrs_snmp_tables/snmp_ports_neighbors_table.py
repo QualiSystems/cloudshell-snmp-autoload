@@ -21,13 +21,13 @@ class PortNeighbours(PortAttributesServiceInterface):
     PORT_NAME_PATTERN = r"{name}\b"
 
     def __init__(self, snmp_service: SnmpService, logger: Logger):
+        super().__init__(snmp_service, logger)
         self._snmp = snmp_service
         self._logger = logger
         self._adjacent_table = defaultdict(dict)
         self._used_adjacent_entries = []
         self._lldp_loc_snmp_table = {}
         self._lldp_rem_snmp_table = {}
-        self._thread_list = []
 
     def _port_match(self, port_name, port_search):
         return re.search(

@@ -12,11 +12,11 @@ from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_in
 
 class PortChannelsAssociatedPorts(PortAttributesServiceInterface):
     def __init__(self, snmp_service: SnmpService, logger: Logger):
+        super().__init__(snmp_service, logger)
         self._snmp_service = snmp_service
         self._logger = logger
         self._associated_ports = defaultdict(list)
         self._snmp_associated_ports = {}
-        self._thread_list = []
 
     def load_snmp_table(self):
         self._snmp_associated_ports = self._snmp_service.get_table(
