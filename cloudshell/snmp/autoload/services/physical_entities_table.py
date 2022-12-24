@@ -32,7 +32,9 @@ class PhysicalTable:
         self._snmp_physical_structure_table = (
             self.entity_table.physical_structure_snmp_table
         )
-        self._thread = Thread(target=self._get_entity_table)
+        self._thread = Thread(
+            name=self.__class__.__name__, target=self._get_entity_table
+        )
         self._thread.start()
 
     @property
