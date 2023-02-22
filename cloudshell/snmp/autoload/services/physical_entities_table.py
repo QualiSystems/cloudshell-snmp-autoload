@@ -1,19 +1,27 @@
+from __future__ import annotations
 import re
 from collections import defaultdict
 from logging import Logger
 from threading import Thread
+from typing import TYPE_CHECKING
 
 from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.entity_helper import EntityHelper
 from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
 
+if TYPE_CHECKING:
+    from typing import Dict
+    from cloudshell.shell.standards.core.autoload.resource_model import AbstractResource
+    from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
+    PhysId=str
+
 
 class PhysicalTable:
     MODULE_EXCLUDE_LIST = ["fan", "cpu"]
     MODULE_TO_CONTAINER_LIST = []
 
-    def __init__(self, entity_table: SnmpEntityTable, logger: Logger, resource_model):
+    def __init__(self, entity_table: SnmpEntityTable, logger: Logger, resource_model: NetworkingResourceModel):
         self.entity_table = entity_table
         self._logger = logger
         self._resource_model = resource_model
@@ -48,19 +56,20 @@ class PhysicalTable:
         return self._port_list
 
     @property
-    def physical_power_ports_dict(self):
+    def physical_power_ports_dict(self)->Dict[PhysId, AbstractResource]:
         self._thread.join()
         return self._power_port_dict
 
     @property
-    def physical_chassis_dict(self):
+    def physical_chassis_dict(self)->Dict[PhysId, AbstractResource]:
         self._thread.join()
         if not self._chassis_dict:
             self._add_dummy_chassis("0")
         return self._chassis_dict
 
     @property
-    def physical_structure_table(self):
+    def physical_structure_table(self) -> Dict[PhysId, AbstractResource]:
+        """Entities table based on Entity-MIB"""
         self._thread.join()
         return self._physical_structure_table
 

@@ -1,6 +1,11 @@
+from __future__ import annotations
 from functools import lru_cache
+from typing import Dict, TYPE_CHECKING
 
 from cloudshell.snmp.autoload.constants.entity_constants import ENTITY_TO_IF_ID
+if TYPE_CHECKING:
+    LogicalId = str
+    PhysId = str
 
 
 class SnmpPortMappingTable:
@@ -10,7 +15,8 @@ class SnmpPortMappingTable:
 
     @property
     @lru_cache()
-    def port_mapping_snmp_table(self):
+    def port_mapping_snmp_table(self) -> Dict[LogicalId, PhysId]:
+        """Port mapping logical to physical indices, based on ENTITY-MIB.entAliasMappingIdentifier"""
         port_map = {}
         for item in self._snmp_service.walk(ENTITY_TO_IF_ID):
             if item.safe_value:

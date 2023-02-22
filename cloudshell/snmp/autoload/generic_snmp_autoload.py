@@ -1,5 +1,7 @@
+from __future__ import annotations
 from contextlib import suppress
 from functools import lru_cache
+from typing import TYPE_CHECKING, List
 
 from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.port_helper import PortHelper
@@ -15,10 +17,16 @@ from cloudshell.snmp.autoload.snmp.tables.snmp_port_mapping_table import (
     SnmpPortMappingTable,
 )
 from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
+if TYPE_CHECKING:
+    from typing import Union
+    from logging import Logger
+    from cloudshell.snmp.core.snmp_service import SnmpService
+    from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
+    from cloudshell.shell.core.driver_context import AutoLoadDetails
 
 
 class GenericSNMPAutoload:
-    def __init__(self, snmp_handler, logger, resource_model):
+    def __init__(self, snmp_handler: SnmpService, logger: Logger, resource_model: NetworkingResourceModel):
         """Basic init with snmp handler and logger.
 
         :param snmp_handler: Snmp handler for general communication
@@ -44,12 +52,12 @@ class GenericSNMPAutoload:
 
     @property
     @lru_cache()
-    def system_info_service(self):
+    def system_info_service(self)->SnmpSystemInfo:
         return SnmpSystemInfo(self.snmp_handler, self.logger)
 
     @property
     @lru_cache()
-    def port_snmp_mapping_table(self):
+    def port_snmp_mapping_table(self)->SnmpPortMappingTable:
         return SnmpPortMappingTable(
             snmp_handler=self.snmp_handler,
             logger=self.logger,
@@ -57,7 +65,7 @@ class GenericSNMPAutoload:
 
     @property
     @lru_cache()
-    def snmp_physical_structure(self):
+    def snmp_physical_structure(self)->SnmpEntityTable:
         return SnmpEntityTable(
             snmp_handler=self.snmp_handler,
             logger=self.logger,
@@ -65,14 +73,14 @@ class GenericSNMPAutoload:
 
     @property
     @lru_cache()
-    def port_snmp_table(self):
+    def port_snmp_table(self)->SnmpPortsTable:
         return SnmpPortsTable(
             snmp_handler=self.snmp_handler,
             logger=self.logger,
         )
 
     @property
-    def port_table_service(self):
+    def port_table_service(self)->PortsTable:
         if not self._port_table_service:
             self._port_table_service = PortsTable(
                 resource_model=self._resource_model,
@@ -82,7 +90,7 @@ class GenericSNMPAutoload:
         return self._port_table_service
 
     @property
-    def physical_table_service(self):
+    def physical_table_service(self)->PhysicalTable:
         if not self._physical_table_service:
             self._physical_table_service = PhysicalTable(
                 entity_table=self.snmp_physical_structure,
@@ -92,7 +100,7 @@ class GenericSNMPAutoload:
         return self._physical_table_service
 
     @property
-    def port_mapping_table_service(self):
+    def port_mapping_table_service(self)->PortMappingService:
         if not self._port_mapping_service:
             self._port_mapping_service = PortMappingService(
                 logger=self.logger,
@@ -102,21 +110,18 @@ class GenericSNMPAutoload:
             )
         return self._port_mapping_service
 
-    def load_mibs(self, path):
+    def load_mibs(self, path:str)->None:
         """Loads mibs inside snmp handler."""
-        self.snmp_handler.update_mib_sources(path)
+        self.snmp_handler.add_mib_folder_path(path)
 
     def discover(
         self,
-        supported_os,
-    ):
+        supported_os: Union[List[str], str],
+    )-> AutoLoadDetails:
         """General entry point for autoload.
 
         Read device structure and attributes:
         chassis, modules, submodules, ports, port-channels and power supplies.
-
-        :param str supported_os:
-        :return: AutoLoadDetails object
         """
         try:
             if not self.system_info_service.is_valid_device_os(supported_os):
@@ -140,7 +145,7 @@ class GenericSNMPAutoload:
         finally:
             self._destroy_threads()
 
-    def _build_power_ports(self):
+    def _build_power_ports(self)->None:
         for (
             power_port_id,
             power_port,
@@ -153,7 +158,7 @@ class GenericSNMPAutoload:
             )
             parent.connect_power_port(power_port)
 
-    def _build_ports_structure(self):
+    def _build_ports_structure(self)->None:
         """Get ports data.
 
         Get resource details and attributes for every port
@@ -168,7 +173,7 @@ class GenericSNMPAutoload:
         )
         port_helper.build_ports_structure()
 
-    def _build_chassis(self):
+    def _build_chassis(self)->None:
         """Get Chassis element attributes.
 
         :type dict<str, cloudshell.snmp.autoload.snmp_entity_table.Element> chassis:
@@ -182,7 +187,7 @@ class GenericSNMPAutoload:
                 self._resource_model.connect_chassis(chassis_object)
                 self.logger.info(f"Added {chassis_object.model} Chassis")
 
-    def _get_port_channels(self):
+    def _get_port_channels(self)->None:
         """Get all port channels and set attributes for them.
 
         :return:
@@ -198,6 +203,6 @@ class GenericSNMPAutoload:
 
         self.logger.info("Building Port Channels completed")
 
-    def _destroy_threads(self):
+    def _destroy_threads(self)->None:
         with suppress(Exception):
             self.port_snmp_table.finalize_threads()

@@ -17,6 +17,8 @@ from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_ports_neig
     PortNeighbours,
 )
 
+from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
+
 
 class SnmpPortsTable:
     def __init__(self, snmp_handler, logger):
@@ -32,7 +34,7 @@ class SnmpPortsTable:
 
     @property
     @lru_cache()
-    def port_table(self):
+    def port_table(self) -> QualiMibTable:
         """Load all cisco required snmp tables."""
         walk = self._snmp.get_multiple_columns(port_constants.IF_TABLE)
         return walk

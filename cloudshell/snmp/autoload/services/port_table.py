@@ -3,6 +3,8 @@ from functools import lru_cache
 from logging import Logger
 from typing import Dict
 
+from cloudshell.shell.standards.autoload_generic_models import GenericPort
+from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
 from cloudshell.snmp.autoload.snmp.helper.snmp_if_entity import SnmpIfEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
 
@@ -24,7 +26,7 @@ class PortsTable:
     PORT_CHANNEL_EXCLUDE_LIST = []
 
     def __init__(
-        self, resource_model, ports_snmp_table: SnmpPortsTable, logger: Logger
+        self, resource_model: NetworkingResourceModel, ports_snmp_table: SnmpPortsTable, logger: Logger
     ):
 
         self._resource_model = resource_model
@@ -77,7 +79,7 @@ class PortsTable:
         return re.compile(port_channel_valid, re.IGNORECASE)
 
     @property
-    def ports_dict(self) -> Dict[str, object]:
+    def ports_dict(self) -> Dict[str, GenericPort]:
         """Port index to Port object map.
 
         Port object is the one defined in the standard's resource_model.

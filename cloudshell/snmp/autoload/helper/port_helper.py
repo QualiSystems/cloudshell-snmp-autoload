@@ -1,15 +1,25 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from cloudshell.snmp.autoload.helper.module_helper import ModuleHelper
 from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
+
+if TYPE_CHECKING:
+    from logging import Logger
+    from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTable
+    from cloudshell.snmp.autoload.services.port_table import PortsTable
+    from cloudshell.snmp.autoload.services.port_mapping_table import PortMappingService
+    from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
 
 
 class PortHelper:
     def __init__(
         self,
-        physical_table_service,
-        port_table_service,
-        port_mapping_table_service,
-        resource_model,
-        logger,
+        physical_table_service: PhysicalTable,
+        port_table_service: PortsTable,
+        port_mapping_table_service: PortMappingService,
+        resource_model: NetworkingResourceModel,
+        logger: Logger,
     ):
         self._chassis = physical_table_service.physical_chassis_dict
         self._physical_table_service = physical_table_service
@@ -22,7 +32,7 @@ class PortHelper:
         self._logger = logger
         self._identified_ports = []
 
-    def build_ports_structure(self):
+    def build_ports_structure(self)->None:
         """Get ports data.
 
         Get resource details and attributes for every port
@@ -31,7 +41,7 @@ class PortHelper:
         self._logger.info("Loading Ports ...")
 
         if self._port_table_service.ports_dict:
-            if self._port_mapping_service.port_mapping.port_mapping_snmp_table:
+            if self._port_mapping_service.port_mapping.port_mapping_snmp_table:  # Build ports based on Entity-MIB
                 self._load_ports_based_on_mapping()
 
             if len(self._port_table_service.ports_dict) == len(self._identified_ports):
@@ -50,9 +60,9 @@ class PortHelper:
         ) in self._port_mapping_service.port_mapping.port_mapping_snmp_table.items():
             phys_port = self._physical_table_service.physical_structure_table.get(
                 phys_port_index
-            )
-            phys_port_entity = self._physical_table_service.load_entity(phys_port_index)
-            if_port = self._port_table_service.ports_dict.get(if_index)
+            )  # Port from resource_model based on Entity table
+            phys_port_entity = self._physical_table_service.load_entity(phys_port_index)  # BaseEntity used for mapping
+            if_port = self._port_table_service.ports_dict.get(if_index)  # Port from resource_model based on IF table
 
             if (
                 not phys_port_entity
@@ -123,9 +133,7 @@ class PortHelper:
 
     def _load_ports_from_physical_table(self):
         for phys_port in self._physical_table_service.physical_ports_list:
-            parent = self._physical_table_service.get_parent_entity(
-                phys_port,
-            )
+            parent = self._module_helper.get_entity_parent_entity(phys_port)
             if parent:
                 parent.connect_port(phys_port)
 
