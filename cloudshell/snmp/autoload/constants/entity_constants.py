@@ -19,7 +19,8 @@ ENTITY_VENDOR_TYPE_TO_CLASS_MAP = OrderedDict(
 
 ENTITY_TO_CONTAINER_PATTERN = re.compile(
     r"powershelf|^\S+sfp|^\S+xfr|^\S+xfp|"
-    r"^\S+Container10GigBasePort|^\S+ModulePseAsicPlim"
+    r"^\S+Container10GigBasePort|^\S+ModulePseAsicPlim",
+    re.IGNORECASE,
 )
 
 ENTITY_POSITION = SnmpMibObject("ENTITY-MIB", "entPhysicalParentRelPos")

@@ -136,9 +136,7 @@ class GenericSNMPAutoload:
             self._get_port_channels()
             self.logger.info("SNMP discovery process finished successfully")
 
-            autoload_details = self._resource_model.build(
-                filter_empty_modules=True, use_new_unique_id=True
-            )
+            autoload_details = self._resource_model.build()
 
             log_autoload_details(self.logger, autoload_details)
             return autoload_details
