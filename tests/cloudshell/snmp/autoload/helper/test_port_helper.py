@@ -32,9 +32,7 @@ class TestPortHelper(TestCase):
         logger = Mock()
         entity_table = self._create_entity_table(logger)
         resource_model = NetworkingResourceModel(
-            "Resource Name",
-            "Shell Name",
-            "CS_Switch",
+            "Resource Name", "Shell Name", "CS_Switch", Mock()
         )
         table = PhysicalTable(entity_table, logger, resource_model)
         table.MODULE_EXCLUDE_LIST = [

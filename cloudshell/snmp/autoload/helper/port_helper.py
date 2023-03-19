@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from cloudshell.snmp.autoload.helper.module_helper import ModuleHelper
@@ -6,10 +7,14 @@ from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 
 if TYPE_CHECKING:
     from logging import Logger
+
+    from cloudshell.shell.standards.networking.autoload_model import (
+        NetworkingResourceModel,
+    )
+
     from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTable
-    from cloudshell.snmp.autoload.services.port_table import PortsTable
     from cloudshell.snmp.autoload.services.port_mapping_table import PortMappingService
-    from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
+    from cloudshell.snmp.autoload.services.port_table import PortsTable
 
 
 class PortHelper:
@@ -32,7 +37,7 @@ class PortHelper:
         self._logger = logger
         self._identified_ports = []
 
-    def build_ports_structure(self)->None:
+    def build_ports_structure(self) -> None:
         """Get ports data.
 
         Get resource details and attributes for every port
@@ -41,7 +46,9 @@ class PortHelper:
         self._logger.info("Loading Ports ...")
 
         if self._port_table_service.ports_dict:
-            if self._port_mapping_service.port_mapping.port_mapping_snmp_table:  # Build ports based on Entity-MIB
+            if (
+                self._port_mapping_service.port_mapping.port_mapping_snmp_table
+            ):  # Build ports based on Entity-MIB
                 self._load_ports_based_on_mapping()
 
             if len(self._port_table_service.ports_dict) == len(self._identified_ports):
@@ -61,16 +68,22 @@ class PortHelper:
             phys_port = self._physical_table_service.physical_structure_table.get(
                 phys_port_index
             )  # Port from resource_model based on Entity table
-            phys_port_entity = self._physical_table_service.load_entity(phys_port_index)  # BaseEntity used for mapping
-            if_port = self._port_table_service.ports_dict.get(if_index)  # Port from resource_model based on IF table
+            phys_port_entity = self._physical_table_service.load_entity(
+                phys_port_index
+            )  # BaseEntity used for mapping
+            if_port = self._port_table_service.ports_dict.get(
+                if_index
+            )  # Port from resource_model based on IF table
 
             if (
                 not phys_port_entity
                 or not if_port
-                or not phys_port
+                # or not phys_port
                 or (phys_port_entity and not self._is_valid_port(phys_port_entity))
             ):
                 self._identified_ports.append(if_index)
+                continue
+            if not phys_port:
                 continue
 
             port_if_entity = self._port_table_service.load_if_port(if_index)
@@ -132,10 +145,19 @@ class PortHelper:
             self._identified_ports.append(if_index)
 
     def _load_ports_from_physical_table(self):
-        for phys_port in self._physical_table_service.physical_ports_list:
-            parent = self._module_helper.get_entity_parent_entity(phys_port)
-            if parent:
-                parent.connect_port(phys_port)
+        for phys_port_id in self._physical_table_service.physical_ports_list:
+            phys_port = self._physical_table_service.physical_structure_table.get(
+                phys_port_id
+            )
+            parent = self._module_helper.get_parent_module("", phys_port)
+            if phys_port.name == "Port":
+                phys_port_entity = self._physical_table_service.load_entity(
+                    phys_port_id
+                )
+                new_rel_path = self._module_helper.find_module_ids(parent)
+                new_rel_path.append(phys_port_entity.position_id)
+                phys_port.name += "-".join(new_rel_path)
+            parent.connect_port(phys_port)
 
     def _is_valid_port(self, entity_port: BaseEntity):
         result = True

@@ -1,14 +1,15 @@
-from unittest.mock import create_autospec
+from unittest.mock import Mock, create_autospec
 
 from cloudshell.snmp.autoload.constants.entity_constants import (
+    CHASSIS_MATCH_PATTERN,
     ENTITY_VENDOR_TYPE_TO_CLASS_MAP,
 )
-from cloudshell.snmp.autoload.helper.chassis_helper import ChassisHelper
+from cloudshell.snmp.autoload.helper.entity_helper import EntityHelper
 from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 
 """
 Code Analysis:
---The ChassisHelper class is responsible for determining the physical class of a given entity.
+--The EntityHelper class is responsible for determining the physical class of a given entity.
 - The get_physical_class method takes an entity object as input and returns a string representing the physical class of the entity.
 - The method first checks if the entity matches a container pattern, in which case it returns "container".
 - If the entity does not match the container pattern, it checks the entity's class. If the class is not defined or is "other", it attempts to determine the class based on the entity's vendor type.
@@ -16,7 +17,7 @@ Code Analysis:
 - If none of the above conditions are met, the method returns the entity's class.
 - The class imports constants from the cloudshell.snmp.autoload package and extends the BaseEntity class from the snmp_entity_base module.
 - The ENTITY_TO_CONTAINER_PATTERN and ENTITY_VENDOR_TYPE_TO_CLASS_MAP constants are used to match vendor types to physical classes.
-- Overall, the ChassisHelper class provides a convenient way to determine the physical class of an entity based on its vendor type and other attributes.
+- Overall, the EntityHelper class provides a convenient way to determine the physical class of an entity based on its vendor type and other attributes.
 """
 
 """
@@ -32,7 +33,7 @@ Test Plan:
 """
 
 
-class TestChassisHelper:
+class TestEntityHelper:
     def test_get_physical_class_entity_defined_and_matches_container(self):
         # Arrange
         expected_result = "container"
@@ -41,20 +42,7 @@ class TestChassisHelper:
         entity.vendor_type = "1.1"
 
         # Act
-        result = ChassisHelper().get_physical_class(entity)
-
-        # Assert
-        assert result == expected_result
-
-    def test_get_physical_class_entity_matches_container_pattern(self):
-        # Arrange
-        expected_result = "container"
-        entity = create_autospec(BaseEntity)
-        entity.entity_class = "module"
-        entity.vendor_type = "UltraXFP"
-
-        # Act
-        result = ChassisHelper().get_physical_class(entity)
+        result = EntityHelper().get_physical_class(entity)
 
         # Assert
         assert result == expected_result
@@ -68,7 +56,7 @@ class TestChassisHelper:
         entity.vendor_type = "1.1"
 
         # Act
-        result = ChassisHelper().get_physical_class(entity)
+        result = EntityHelper().get_physical_class(entity)
 
         # Assert
         assert result == "chassis"
@@ -81,7 +69,7 @@ class TestChassisHelper:
         entity.vendor_type = f"UnknownDevice{expected_result.title()}"
 
         # Act
-        result = ChassisHelper().get_physical_class(entity)
+        result = EntityHelper().get_physical_class(entity)
 
         # Assert
         assert result == expected_result
@@ -94,7 +82,7 @@ class TestChassisHelper:
         entity.vendor_type = f"UnknownDevice{expected_result.title()}"
 
         # Act
-        result = ChassisHelper().get_physical_class(entity)
+        result = EntityHelper().get_physical_class(entity)
 
         # Assert
         assert result == expected_result
@@ -109,41 +97,41 @@ class TestChassisHelper:
         entity.vendor_type = f"UnknownDevice{expected_result.title()}"
 
         # Act
-        result = ChassisHelper().get_physical_class(entity)
+        result = EntityHelper().get_physical_class(entity)
 
         # Assert
         assert result == entity.entity_class
 
     def test_get_physical_class_entity_vendor_type_matches_known_physical_class(self):
         # Arrange
-        entity = BaseEntity(vendor_type="known_vendor_type")
+        entity = Mock(spec=BaseEntity, vendor_type="cevChassis", entity_class="")
 
         # Act
-        result = ChassisHelper().get_physical_class(entity)
+        result = EntityHelper().get_physical_class(entity)
 
         # Assert
-        assert result == ENTITY_VENDOR_TYPE_TO_CLASS_MAP["known_vendor_type"]
+        assert result == ENTITY_VENDOR_TYPE_TO_CLASS_MAP[CHASSIS_MATCH_PATTERN]
 
-    def test_get_physical_class_entity_vendor_type_is_defined_but_does_not_match_known_physical_class(
+    def test_get_phys_cl_ent_vendor_type_is_defined_does_not_match_known_physical_class(
         self,
     ):
         # Arrange
-        entity = BaseEntity(vendor_type="unknown_vendor_type")
+        entity = Mock(spec=BaseEntity, vendor_type="cevUnknown", entity_class="chassis")
 
         # Act
-        result = ChassisHelper().get_physical_class(entity)
+        result = EntityHelper().get_physical_class(entity)
 
         # Assert
         assert result == entity.entity_class
 
-    def test_get_physical_class_entity_does_not_match_container_pattern_and_physical_class_cannot_be_determined(
+    def test_get_phys_cl_physical_class_cannot_be_determined(
         self,
     ):
         # Arrange
-        entity = BaseEntity()
+        entity = Mock(spec=BaseEntity, vendor_type="cevUnknown", entity_class="")
 
         # Act
-        result = ChassisHelper().get_physical_class(entity)
+        result = EntityHelper().get_physical_class(entity)
 
         # Assert
         assert result == ""

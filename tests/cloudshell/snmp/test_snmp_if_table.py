@@ -22,9 +22,7 @@ class TestSnmpIfTable(unittest.TestCase):
         logger = Mock()
         snmp = Mock()
         resource_model = NetworkingResourceModel(
-            "Resource Name",
-            "Shell Name",
-            "CS_Switch",
+            "Resource Name", "Shell Name", "CS_Switch", Mock()
         )
         index = "527304960"
         port_value = PORT_SNMP_DATA.get(index)

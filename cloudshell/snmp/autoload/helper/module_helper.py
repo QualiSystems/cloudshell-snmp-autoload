@@ -64,7 +64,7 @@ class ModuleHelper:
                             (
                                 x
                                 for x in self.port_id_to_module_map.values()
-                                if self._find_module_ids(x) == module_ids
+                                if self.find_module_ids(x) == module_ids
                             ),
                             None,
                         )
@@ -161,7 +161,7 @@ class ModuleHelper:
             and not parent.name.lower().startswith("chassis")
         ):
             parent_id_list = port_parent_id.split("-")
-            rel_address = self._find_module_ids(parent)
+            rel_address = self.find_module_ids(parent)
             self._sub_module_parents_map[rel_address] = parent
             if not parent.name.lower().startswith("sub"):
                 self._update_module_map(port_parent_id, parent)
@@ -176,11 +176,11 @@ class ModuleHelper:
             port_parent_id not in self._module_parents_map
             and not parent.name.lower().startswith("chassis")
         ):
-            rel_address = self._find_module_ids(parent)
+            rel_address = self.find_module_ids(parent)
             self._module_parents_map[port_parent_id] = parent
             self._module_parents_map[rel_address] = parent
 
-    def _find_module_ids(self, module):
+    def find_module_ids(self, module):
         module_ids = []
         rel_address_match = re.findall(r"\d+", str(module.relative_address))
         if rel_address_match:

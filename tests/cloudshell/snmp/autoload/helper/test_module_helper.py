@@ -11,9 +11,7 @@ from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTa
 class TestPhysicalTable(TestCase):
     def test_get_parent_module_no_entity_no_entity_no_module_map(self):
         resource_model = NetworkingResourceModel(
-            "Resource Name",
-            "Shell Name",
-            "CS_Switch",
+            "Resource Name", "Shell Name", "CS_Switch", Mock()
         )
         entity_table = Mock()
         entity_table.physical_structure_snmp_table = {}
@@ -27,9 +25,7 @@ class TestPhysicalTable(TestCase):
 
     def test_get_parent_module_no_entity_no_entity_sub_module_map(self):
         resource_model = NetworkingResourceModel(
-            "Resource Name",
-            "Shell Name",
-            "CS_Switch",
+            "Resource Name", "Shell Name", "CS_Switch", Mock()
         )
         entity_table = Mock()
         entity_table.physical_structure_snmp_table = {}
@@ -51,9 +47,7 @@ class TestPhysicalTable(TestCase):
 
     def test_get_parent_module_no_entity_no_entity_module_map(self):
         resource_model = NetworkingResourceModel(
-            "Resource Name",
-            "Shell Name",
-            "CS_Switch",
+            "Resource Name", "Shell Name", "CS_Switch", Mock()
         )
         entity_table = Mock()
         entity_table.physical_structure_snmp_table = {}
@@ -74,9 +68,7 @@ class TestPhysicalTable(TestCase):
 
     def test_attach_port_to_parent_sub_module(self):
         resource_model = NetworkingResourceModel(
-            "Resource Name",
-            "Shell Name",
-            "CS_Switch",
+            "Resource Name", "Shell Name", "CS_Switch", Mock()
         )
         entity_table = Mock()
         entity_table.physical_structure_snmp_table = {}
@@ -96,9 +88,7 @@ class TestPhysicalTable(TestCase):
 
     def test_attach_port_to_parent_module(self):
         resource_model = NetworkingResourceModel(
-            "Resource Name",
-            "Shell Name",
-            "CS_Switch",
+            "Resource Name", "Shell Name", "CS_Switch", Mock()
         )
         entity_table = Mock()
         entity_table.physical_structure_snmp_table = {}

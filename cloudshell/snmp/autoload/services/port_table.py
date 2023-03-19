@@ -5,6 +5,7 @@ from typing import Dict
 
 from cloudshell.shell.standards.autoload_generic_models import GenericPort
 from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
+
 from cloudshell.snmp.autoload.snmp.helper.snmp_if_entity import SnmpIfEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
 
@@ -12,7 +13,12 @@ from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
 class PortsTable:
     ALLOWED_PORT_MODEL_NAME = ["GenericPort"]
     ALLOWED_PORT_CHANNEL_MODEL_NAME = ["GenericPortChannel"]
-    PORT_CHANNEL_NAME_LIST = [r"^ae\d+", r"^port-channel\d+", r"^bundle-ether\d+"]
+    PORT_CHANNEL_NAME_LIST = [
+        r"^ae\d+",
+        r"^port-channel\d+",
+        r"^bundle-ether\d+",
+        r"lag",
+    ]
     PORT_NAME_LIST = []
     PORT_CHANNEL_VALID_TYPE_LIST = [r"ieee8023adLag", r"propVirtual", r"other"]
     PORT_VALID_TYPE_LIST = [
@@ -21,12 +27,15 @@ class PortsTable:
     ]
     PORT_EXCLUDE_LIST = [
         r"stack|engine|management|mgmt|null|voice",
-        r"cpu|control\s*ethernet\s*port|console\s*port",
+        r"control\s*ethernet\s*port|console\s*port",
     ]
     PORT_CHANNEL_EXCLUDE_LIST = []
 
     def __init__(
-        self, resource_model: NetworkingResourceModel, ports_snmp_table: SnmpPortsTable, logger: Logger
+        self,
+        resource_model: NetworkingResourceModel,
+        ports_snmp_table: SnmpPortsTable,
+        logger: Logger,
     ):
 
         self._resource_model = resource_model

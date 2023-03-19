@@ -19,9 +19,7 @@ class TestPhysicalTable(TestCase):
         self._logger = Mock()
         entity_table = self._create_entity_table()
         self._resource_model = NetworkingResourceModel(
-            "Resource Name",
-            "Shell Name",
-            "CS_Switch",
+            "Resource Name", "Shell Name", "CS_Switch", Mock()
         )
         self.table = PhysicalTable(entity_table, self._logger, self._resource_model)
         self.table.MODULE_EXCLUDE_LIST = [

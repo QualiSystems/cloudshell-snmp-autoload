@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import re
 from collections import defaultdict
 from logging import Logger
@@ -11,17 +12,24 @@ from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
 
 if TYPE_CHECKING:
-    from typing import Dict
     from cloudshell.shell.standards.core.autoload.resource_model import AbstractResource
-    from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
-    PhysId=str
+    from cloudshell.shell.standards.networking.autoload_model import (
+        NetworkingResourceModel,
+    )
+
+    PhysId = str
 
 
 class PhysicalTable:
     MODULE_EXCLUDE_LIST = ["fan", "cpu"]
     MODULE_TO_CONTAINER_LIST = []
 
-    def __init__(self, entity_table: SnmpEntityTable, logger: Logger, resource_model: NetworkingResourceModel):
+    def __init__(
+        self,
+        entity_table: SnmpEntityTable,
+        logger: Logger,
+        resource_model: NetworkingResourceModel,
+    ):
         self.entity_table = entity_table
         self._logger = logger
         self._resource_model = resource_model
@@ -56,20 +64,20 @@ class PhysicalTable:
         return self._port_list
 
     @property
-    def physical_power_ports_dict(self)->Dict[PhysId, AbstractResource]:
+    def physical_power_ports_dict(self) -> dict[PhysId, AbstractResource]:
         self._thread.join()
         return self._power_port_dict
 
     @property
-    def physical_chassis_dict(self)->Dict[PhysId, AbstractResource]:
+    def physical_chassis_dict(self) -> dict[PhysId, AbstractResource]:
         self._thread.join()
         if not self._chassis_dict:
             self._add_dummy_chassis("0")
         return self._chassis_dict
 
     @property
-    def physical_structure_table(self) -> Dict[PhysId, AbstractResource]:
-        """Entities table based on Entity-MIB"""
+    def physical_structure_table(self) -> dict[PhysId, AbstractResource]:
+        """Entities table based on Entity-MIB."""
         self._thread.join()
         return self._physical_structure_table
 
@@ -125,7 +133,7 @@ class PhysicalTable:
         self.chassis_ids_dict[index] = chassis_object
 
     def _add_port(self, entity):
-        name = entity.name or entity.description
+        name = self._pick_port_name(entity)
         if not name:
             return
         port_object = self._resource_model.entities.Port(
@@ -140,6 +148,27 @@ class PhysicalTable:
         if not parent_module:
             return
         self.parent_dict[port_object] = parent_module.index
+
+    def _pick_port_name(self, entity):
+        port_name = "Port"
+        name_is_unique = True
+        descr_is_unique = True
+        for k in self.entity_table.physical_structure_snmp_table:
+            if k == entity.index:
+                continue
+            v_entity = self.load_entity(k)
+            if v_entity.entity_class == entity.entity_class:
+                if v_entity.name == entity.name:
+                    name_is_unique = False
+                if v_entity.description == entity.description:
+                    descr_is_unique = False
+            if not descr_is_unique and not name_is_unique:
+                break
+        if name_is_unique:
+            port_name = entity.name
+        elif descr_is_unique:
+            port_name = entity.description
+        return port_name
 
     def _add_power_port(self, entity):
         power_port_object = self._resource_model.entities.PowerPort(
