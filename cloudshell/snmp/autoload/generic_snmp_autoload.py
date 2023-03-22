@@ -190,7 +190,6 @@ class GenericSNMPAutoload:
         for (
             chassis_object
         ) in self.physical_table_service.physical_chassis_dict.values():
-
             if chassis_object:
                 self._resource_model.connect_chassis(chassis_object)
                 self.logger.info(f"Added {chassis_object.model} Chassis")

@@ -37,7 +37,6 @@ class PortsTable:
         ports_snmp_table: SnmpPortsTable,
         logger: Logger,
     ):
-
         self._resource_model = resource_model
         self._if_table = {}
         self._if_entity = SnmpIfEntity

@@ -1,5 +1,7 @@
 from functools import lru_cache
 
+from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
+
 from cloudshell.snmp.autoload.constants import port_constants
 from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_associated_ports import (
     PortChannelsAssociatedPorts,
@@ -16,8 +18,6 @@ from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_ports_dupl
 from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_ports_neighbors_table import (
     PortNeighbours,
 )
-
-from cloudshell.snmp.core.domain.quali_mib_table import QualiMibTable
 
 
 class SnmpPortsTable:
