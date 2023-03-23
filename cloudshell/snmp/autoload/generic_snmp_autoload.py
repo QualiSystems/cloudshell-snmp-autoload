@@ -1,288 +1,215 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+from __future__ import annotations
 
-import re
+from contextlib import suppress
+from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from cloudshell.snmp.autoload.core.snmp_autoload_error import GeneralAutoloadError
-from cloudshell.snmp.autoload.helper.snmp_autoload_helper import log_autoload_details
-from cloudshell.snmp.autoload.snmp_entity_table import SnmpEntityTable
-from cloudshell.snmp.autoload.snmp_if_table import SnmpIfTable
-from cloudshell.snmp.autoload.snmp_system_info import SnmpSystemInfo
+from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
+from cloudshell.snmp.autoload.helper.port_helper import PortHelper
+from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTable
+from cloudshell.snmp.autoload.services.port_mapping_table import PortMappingService
+from cloudshell.snmp.autoload.services.port_table import PortsTable
+from cloudshell.snmp.autoload.services.system_info_table import SnmpSystemInfo
+from cloudshell.snmp.autoload.snmp.helper.snmp_autoload_helper import (
+    log_autoload_details,
+)
+from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
+from cloudshell.snmp.autoload.snmp.tables.snmp_port_mapping_table import (
+    SnmpPortMappingTable,
+)
+from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
+
+if TYPE_CHECKING:
+    from logging import Logger
+
+    from cloudshell.shell.core.driver_context import AutoLoadDetails
+    from cloudshell.shell.standards.networking.autoload_model import (
+        NetworkingResourceModel,
+    )
+    from cloudshell.snmp.core.snmp_service import SnmpService
 
 
-class GenericSNMPAutoload(object):
-    PORT_NAME_PATTERN = re.compile(r"\d+(/\d+)*", re.IGNORECASE)
-
-    def __init__(self, snmp_handler, logger):
+class GenericSNMPAutoload:
+    def __init__(
+        self,
+        snmp_handler: SnmpService,
+        logger: Logger,
+        resource_model: NetworkingResourceModel,
+    ):
         """Basic init with snmp handler and logger.
 
-        :param snmp_handler:
-        :param logger:
+        :param snmp_handler: Snmp handler for general communication
+        :param logger: Logger
+        :param resource_model: Represents Resource Model according to a standard
+        :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
+
         :return:
         """
         self.snmp_handler = snmp_handler
-        self._resource_model = None
         self.logger = logger
         self.elements = {}
         self._entity_table = None
-        self._system_info = None
+        self._port_snmp_table = None
         self._if_table = None
+        self._port_table = None
+        self._system_info = None
+        self._resource_model = resource_model
         self._validate_module_id_by_port_name = False
-        self._if_ports_in_entity = False
-        self._chassis = {}
+        self._port_table_service = None
+        self._physical_table_service = None
+        self._port_mapping_service = None
 
     @property
-    def if_table_service(self):
-        if not self._if_table:
-            self._if_table = SnmpIfTable(
-                snmp_handler=self.snmp_handler, logger=self.logger
-            )
-
-        return self._if_table
+    @lru_cache()
+    def system_info_service(self) -> SnmpSystemInfo:
+        return SnmpSystemInfo(self.snmp_handler, self.logger)
 
     @property
-    def entity_table_service(self):
-        if not self._entity_table:
-            self._entity_table = SnmpEntityTable(
-                snmp_handler=self.snmp_handler,
+    @lru_cache()
+    def port_snmp_mapping_table(self) -> SnmpPortMappingTable:
+        return SnmpPortMappingTable(
+            snmp_handler=self.snmp_handler,
+            logger=self.logger,
+        )
+
+    @property
+    @lru_cache()
+    def snmp_physical_structure(self) -> SnmpEntityTable:
+        return SnmpEntityTable(
+            snmp_handler=self.snmp_handler,
+            logger=self.logger,
+        )
+
+    @property
+    @lru_cache()
+    def port_snmp_table(self) -> SnmpPortsTable:
+        return SnmpPortsTable(
+            snmp_handler=self.snmp_handler,
+            logger=self.logger,
+        )
+
+    @property
+    def port_table_service(self) -> PortsTable:
+        if not self._port_table_service:
+            self._port_table_service = PortsTable(
+                resource_model=self._resource_model,
+                ports_snmp_table=self.port_snmp_table,
                 logger=self.logger,
-                if_table=self.if_table_service,
             )
-        return self._entity_table
+        return self._port_table_service
 
     @property
-    def system_info_service(self):
-        if not self._system_info:
-            self._system_info = SnmpSystemInfo(self.snmp_handler, self.logger)
-        return self._system_info
+    def physical_table_service(self) -> PhysicalTable:
+        if not self._physical_table_service:
+            self._physical_table_service = PhysicalTable(
+                entity_table=self.snmp_physical_structure,
+                logger=self.logger,
+                resource_model=self._resource_model,
+            )
+        return self._physical_table_service
 
-    def load_mibs(self, path):
+    @property
+    def port_mapping_table_service(self) -> PortMappingService:
+        if not self._port_mapping_service:
+            self._port_mapping_service = PortMappingService(
+                logger=self.logger,
+                port_snmp_mapping_table=self.port_snmp_mapping_table,
+                physical_table=self.physical_table_service,
+                port_table=self.port_table_service,
+            )
+        return self._port_mapping_service
+
+    def load_mibs(self, path: str) -> None:
         """Loads mibs inside snmp handler."""
-        self.snmp_handler.update_mib_sources(path)
+        self.snmp_handler.add_mib_folder_path(path)
 
     def discover(
-        self, supported_os, resource_model, validate_module_id_by_port_name=False
-    ):
-        """General entry point for autoload. Read device structure and attributes: chassis, modules, submodules, ports, port-channels and power supplies.
+        self,
+        supported_os: list[str] | str,
+    ) -> AutoLoadDetails:
+        """General entry point for autoload.
 
-        :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
-        :param str supported_os:
-        :param bool validate_module_id_by_port_name:
-        :return: AutoLoadDetails object
+        Read device structure and attributes:
+        chassis, modules, submodules, ports, port-channels and power supplies.
         """
-        self.entity_table_service.validate_module_id_by_port_name = (
-            validate_module_id_by_port_name
-        )
-        if not resource_model:
-            return
-        self._resource_model = resource_model
-        if not self.system_info_service.is_valid_device_os(supported_os):
-            raise GeneralAutoloadError("Unsupported device OS")
+        try:
+            if not self.system_info_service.is_valid_device_os(supported_os):
+                raise GeneralAutoloadError("Unsupported device OS")
 
-        self.logger.info("*" * 70)
-        self.logger.info("Start SNMP discovery process .....")
-        self.system_info_service.fill_attributes(resource_model)
+            self.logger.info("*" * 70)
+            self.logger.info("Start SNMP discovery process .....")
+            self.system_info_service.fill_attributes(self._resource_model)
+            self._build_chassis()
+            self._build_power_ports()
+            self._build_ports_structure()
+            self._get_port_channels()
+            self.logger.info("SNMP discovery process finished successfully")
 
-        entity_chassis_tree_dict = self.entity_table_service.chassis_structure_dict
+            autoload_details = self._resource_model.build()
 
-        if entity_chassis_tree_dict:
-            self._build_structure(entity_chassis_tree_dict.values(), resource_model)
-            self._get_port_channels(resource_model)
+            log_autoload_details(self.logger, autoload_details)
+            return autoload_details
+        finally:
+            self._destroy_threads()
 
-        if not self._if_ports_in_entity:
-            self._add_ports_from_iftable()
+    def _build_power_ports(self) -> None:
+        for (
+            power_port_id,
+            power_port,
+        ) in self.physical_table_service.physical_power_ports_dict.items():
+            parent_object = self.physical_table_service.get_parent_chassis(
+                power_port_id
+            )
+            parent = self.physical_table_service.physical_chassis_dict.get(
+                parent_object.index
+            )
+            if parent:
+                parent.connect_power_port(power_port)
 
-        autoload_details = resource_model.build(
-            filter_empty_modules=True, use_new_unique_id=True
-        )
-
-        log_autoload_details(self.logger, autoload_details)
-        return autoload_details
-
-    def _build_structure(self, child_list, parent):
-        for element in child_list:
-            if isinstance(element.entity, SnmpEntityTable.ENTITY_CHASSIS):
-                chassis = self._get_chassis_attributes(element, parent)
-                self._chassis.update({str(element.entity.position_id): chassis})
-                self._build_structure(element.child_list, chassis)
-
-            elif isinstance(element.entity, SnmpEntityTable.ENTITY_MODULE):
-                module = self._get_module_attributes(element, parent)
-                if module:
-                    self._build_structure(element.child_list, module)
-
-            elif isinstance(element.entity, SnmpEntityTable.ENTITY_POWER_PORT):
-                self._get_power_ports(element, parent)
-
-            elif isinstance(element.entity, SnmpEntityTable.ENTITY_PORT):
-                self._if_ports_in_entity = self._if_ports_in_entity or True
-                self._get_ports_attributes(element.if_entity, parent)
-
-    def _add_ports_from_iftable(self):
+    def _build_ports_structure(self) -> None:
         """Get ports data.
 
         Get resource details and attributes for every port
         base on data from IF-MIB Table.
         """
-        self.logger.info("Loading Ports ...")
+        port_helper = PortHelper(
+            physical_table_service=self.physical_table_service,
+            port_table_service=self.port_table_service,
+            port_mapping_table_service=self.port_mapping_table_service,
+            resource_model=self._resource_model,
+            logger=self.logger,
+        )
+        port_helper.build_ports_structure()
 
-        for if_index, interface in self.if_table_service.if_ports.items():
-            if self.if_table_service.PORT_VALID_TYPE.search(interface.if_type):
-                self.logger.debug("Trying to load port {}:".format(interface.port_name))
-                match = re.search(
-                    r"(?P<ch_index>\d+)(/\d+)*/(?P<if_index>\d+)$",
-                    interface.if_descr_name,
-                    re.IGNORECASE,
-                )
-
-                if match:
-                    chassis_id = match.groupdict().get("ch_index")
-                    if chassis_id not in self._chassis:
-                        self._add_dummy_chassis(chassis_id)
-                else:
-                    chassis_id = next(iter(self._chassis), None)
-                    if not chassis_id:
-                        chassis_id = "0"
-                        self._add_dummy_chassis(chassis_id)
-                parent_element = self._chassis.get(chassis_id)
-                self._get_ports_attributes(interface, parent_element)
-
-        self.logger.info("Building Ports completed")
-
-    def _add_dummy_chassis(self, chassis_id):
-        """Create Dummy Chassis."""
-        chassis_object = self._resource_model.entities.Chassis(index=chassis_id)
-
-        self._resource_model.connect_chassis(chassis_object)
-        self._chassis.update({str(chassis_id): chassis_object})
-        self.logger.info("Added Dummy Chassis with index {}".format(chassis_id))
-
-    def _get_chassis_attributes(self, chassis, parent):
+    def _build_chassis(self) -> None:
         """Get Chassis element attributes.
 
         :type dict<str, cloudshell.snmp.autoload.snmp_entity_table.Element> chassis:
         """
         self.logger.debug("Building Chassis")
-        if not chassis.entity:
-            return
+        for (
+            chassis_object
+        ) in self.physical_table_service.physical_chassis_dict.values():
+            if chassis_object:
+                self._resource_model.connect_chassis(chassis_object)
+                self.logger.info(f"Added {chassis_object.model} Chassis")
 
-        chassis_object = self._resource_model.entities.Chassis(index=chassis.id)
-
-        chassis_object.model = chassis.entity.model
-        chassis_object.serial_number = chassis.entity.serial_number
-
-        parent.connect_chassis(chassis_object)
-        self.logger.info("Added " + chassis.entity.model + " Chassis")
-        return chassis_object
-
-    def _get_module_attributes(self, module, parent):
-        """Set attributes for all discovered modules."""
-        self.logger.debug("Building Modules")
-
-        if isinstance(parent, self._resource_model.entities.Module):
-            module_object = self._resource_model.entities.SubModule(index=module.id)
-            parent.connect_sub_module(module_object)
-        elif isinstance(parent, self._resource_model.entities.Chassis):
-            module_object = self._resource_model.entities.Module(index=module.id)
-            parent.connect_module(module_object)
-        else:
-            self.logger.error(
-                "Failed to load the following element {}".format(parent.name)
-            )
-            return
-
-        module_object.model = module.entity.model
-        module_object.version = module.entity.os_version
-        module_object.serial_number = module.entity.serial_number
-
-        self.logger.info("Module {} added".format(module_object.model))
-        return module_object
-
-    def _get_power_ports(self, power_port, parent_element):
-        """Get attributes for power ports provided in self.power_supply_list.
-
-        :type power_port: cloudshell.snmp.autoload.snmp_entity_table.Element
-        :return:
-        """
-        self.logger.debug("Building Power Port")
-        power_port_object = self._resource_model.entities.PowerPort(index=power_port.id)
-        power_port_object.model = power_port.entity.base_entity.model
-        power_port_object.port_description = power_port.entity.base_entity.description
-        power_port_object.version = power_port.entity.hardware_version
-        power_port_object.serial_number = power_port.entity.serial_number
-        parent_element.connect_power_port(power_port_object)
-        self.logger.info(
-            "Added "
-            + power_port.entity.base_entity.model.strip(" \t\n\r")
-            + " Power Port"
-        )
-
-    def _get_port_channels(self, parent_resource):
+    def _get_port_channels(self) -> None:
         """Get all port channels and set attributes for them.
 
-        :type parent_resource: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
         :return:
+        Get resource details and attributes for every port
+        base on data from IF-MIB Table.
         """
-        if not self.if_table_service.if_port_channels:
+        if not self.port_table_service.port_channels_dict:
             return
         self.logger.info("Building Port Channels")
-        for (
-            if_port_channel_id,
-            if_port_channel,
-        ) in self.if_table_service.if_port_channels.items():
-            interface_model = if_port_channel.port_name
-            match_object = re.search(r"\d+$", interface_model)
-            if match_object:
-                interface_id = "{0}".format(match_object.group(0))
-                associated_ports = ""
-                for port in if_port_channel.associated_port_list:
-                    if_port_name = self.if_table_service.get_if_entity_by_index(
-                        port
-                    ).if_name
-                    associated_ports = (
-                        if_port_name.replace("/", "-").replace(" ", "") + "; "
-                    )
-
-                port_channel = self._resource_model.entities.PortChannel(
-                    index=interface_id
-                )
-
-                port_channel.associated_ports = associated_ports.strip(" \t\n\r")
-                port_channel.port_description = if_port_channel.if_port_description
-                port_channel.ipv4_address = if_port_channel.ipv4_address
-                port_channel.ipv6_address = if_port_channel.ipv6_address
-
-                parent_resource.connect_port_channel(port_channel)
-                self.logger.info("Added " + interface_model + " Port Channel")
-
-            else:
-                self.logger.error(
-                    "Adding of {0} failed. Name is invalid".format(interface_model)
-                )
+        for port_channel in self.port_table_service.port_channels_dict.values():
+            self._resource_model.connect_port_channel(port_channel)
+            self.logger.info(f"Added {port_channel.name}")
 
         self.logger.info("Building Port Channels completed")
 
-    def _get_ports_attributes(self, port, parent_element):
-        """Get resource details and attributes for every port in self.port_list."""
-        name = port.port_name
-        if not name:
-            return
-
-        self.logger.debug("Trying to load port {}:".format(port.port_name))
-
-        port_object = self._resource_model.entities.Port(
-            index=port.if_index, name=name.replace("/", "-")
-        )
-        port_object.mac_address = port.if_mac
-        port_object.l2_protocol_type = port.if_type.replace("'", "")
-        port_object.ipv4_address = port.ipv4_address
-        port_object.ipv6_address = port.ipv6_address
-        port_object.port_description = port.if_port_description
-        port_object.bandwidth = port.if_speed
-        port_object.mtu = port.if_mtu
-        port_object.duplex = port.duplex
-        port_object.adjacent = port.adjacent
-        port_object.auto_negotiation = port.auto_negotiation
-        port_object.mac_address = port.if_mac
-        parent_element.connect_port(port_object)
-        self.logger.info("Added {} Port".format(port.port_name))
+    def _destroy_threads(self) -> None:
+        with suppress(Exception):
+            self.port_snmp_table.finalize_threads()
