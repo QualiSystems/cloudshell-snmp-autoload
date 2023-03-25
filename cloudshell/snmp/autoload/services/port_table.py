@@ -186,7 +186,7 @@ class PortsTable:
 
     def _add_port_channel(self, port: SnmpIfEntity):
         port_channel_object = self._resource_model.entities.PortChannel(
-            index=port.port_id
+            index=port.port_id, name=port.port_name.replace("/", "-")
         )
         associated_port_list = (
             self.ports_tables.port_channel_associated_ports.get_associated_ports(
