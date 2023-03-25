@@ -1,5 +1,7 @@
 import re
 
+from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
+
 
 class ModuleHelper:
     def __init__(self, resource_model, physical_table_service, logger):
@@ -226,7 +228,7 @@ class ModuleHelper:
                 elif isinstance(entity, self._resource_model.entities.Module):
                     parent.connect_module(entity)
                 else:
-                    raise Exception(
+                    raise GeneralAutoloadError(
                         f"Invalid entity type, can't attach '{type(entity)}' to the "
                         f"parent '{type(parent)}'"
                     )
