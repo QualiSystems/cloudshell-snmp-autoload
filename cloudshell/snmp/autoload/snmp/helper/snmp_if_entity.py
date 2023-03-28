@@ -22,7 +22,8 @@ class SnmpIfEntity:
     @property
     @lru_cache()
     def port_name(self):
-        return self.if_name or self.if_descr_name
+        result = self.if_name or self.if_descr_name
+        return result.replace("/", "-").replace(":", "_")
 
     @property
     @lru_cache()
