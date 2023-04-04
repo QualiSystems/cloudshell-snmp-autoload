@@ -20,9 +20,7 @@ setup(
     install_requires=required,
     test_suite="tests",
     tests_require=required_for_tests,
-    python_requires=(
-        "!=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*, <4"
-    ),
+    python_requires="~=3.7",
     version=version_from_file,
     description="QualiSystems SNMP Autoload Python package",
     long_description="QualiSystems SNMP Autoload Python package",
