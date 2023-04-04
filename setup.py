@@ -25,5 +25,6 @@ setup(
     ),
     version=version_from_file,
     description="QualiSystems SNMP Autoload Python package",
+    long_description="QualiSystems SNMP Autoload Python package",
     include_package_data=True,
 )
