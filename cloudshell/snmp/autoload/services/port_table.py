@@ -155,7 +155,7 @@ class PortsTable:
 
     def _add_port(self, port: SnmpIfEntity):
         port_object = self._resource_model.entities.Port(
-            index=port.if_index, name=port.port_name.replace("/", "-")
+            index=port.if_index, name=port.port_name
         )
         port_object.mac_address = port.if_mac
         port_object.l2_protocol_type = port.if_type.replace("'", "")
@@ -186,7 +186,7 @@ class PortsTable:
 
     def _add_port_channel(self, port: SnmpIfEntity):
         port_channel_object = self._resource_model.entities.PortChannel(
-            index=port.port_id
+            index=port.port_id, name=port.port_name
         )
         associated_port_list = (
             self.ports_tables.port_channel_associated_ports.get_associated_ports(
@@ -210,7 +210,7 @@ class PortsTable:
         if if_index in self._if_port_dict:
             return self._if_port_dict.get(if_index).name
         snmp_port_data = self.load_if_port(if_index)
-        return snmp_port_data.port_name.replace("/", "-")
+        return snmp_port_data.port_name
 
     def is_wrong_port(self, port_name):
         return self.port_exclude_re.search(port_name.lower())

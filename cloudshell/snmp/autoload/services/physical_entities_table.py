@@ -13,9 +13,6 @@ from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTab
 
 if TYPE_CHECKING:
     from cloudshell.shell.standards.core.autoload.resource_model import AbstractResource
-    from cloudshell.shell.standards.networking.autoload_model import (
-        NetworkingResourceModel,
-    )
 
     PhysId = str
 
@@ -28,8 +25,13 @@ class PhysicalTable:
         self,
         entity_table: SnmpEntityTable,
         logger: Logger,
-        resource_model: NetworkingResourceModel,
+        resource_model,
     ):
+        """Init PhysicalTable.
+
+        :resource_model: Stands for the standard Resource Model,
+        i.e. NetworkingResourceModel for Networking standard.
+        """
         self.entity_table = entity_table
         self._logger = logger
         self._resource_model = resource_model
