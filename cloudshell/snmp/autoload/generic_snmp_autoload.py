@@ -22,10 +22,6 @@ from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
 if TYPE_CHECKING:
     from logging import Logger
 
-    from cloudshell.shell.core.driver_context import AutoLoadDetails
-    from cloudshell.shell.standards.networking.autoload_model import (
-        NetworkingResourceModel,
-    )
     from cloudshell.snmp.core.snmp_service import SnmpService
 
 
@@ -34,7 +30,7 @@ class GenericSNMPAutoload:
         self,
         snmp_handler: SnmpService,
         logger: Logger,
-        resource_model: NetworkingResourceModel,
+        resource_model,
     ):
         """Basic init with snmp handler and logger.
 
@@ -126,11 +122,13 @@ class GenericSNMPAutoload:
     def discover(
         self,
         supported_os: list[str] | str,
-    ) -> AutoLoadDetails:
-        """General entry point for autoload.
+    ):
+        """An entry point for autoload.
 
         Read device structure and attributes:
         chassis, modules, submodules, ports, port-channels and power supplies.
+
+        :rtype: cloudshell.shell.core.driver_context.AutoLoadDetails
         """
         try:
             if not self.system_info_service.is_valid_device_os(supported_os):

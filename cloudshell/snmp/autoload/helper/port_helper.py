@@ -8,10 +8,6 @@ from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 if TYPE_CHECKING:
     from logging import Logger
 
-    from cloudshell.shell.standards.networking.autoload_model import (
-        NetworkingResourceModel,
-    )
-
     from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTable
     from cloudshell.snmp.autoload.services.port_mapping_table import PortMappingService
     from cloudshell.snmp.autoload.services.port_table import PortsTable
@@ -23,9 +19,13 @@ class PortHelper:
         physical_table_service: PhysicalTable,
         port_table_service: PortsTable,
         port_mapping_table_service: PortMappingService,
-        resource_model: NetworkingResourceModel,
+        resource_model,
         logger: Logger,
     ):
+        """Init.
+
+        :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
+        """
         self._chassis = physical_table_service.physical_chassis_dict
         self._physical_table_service = physical_table_service
         self._port_table_service = port_table_service

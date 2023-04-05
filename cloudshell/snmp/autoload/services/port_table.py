@@ -3,9 +3,6 @@ from functools import lru_cache
 from logging import Logger
 from typing import Dict
 
-from cloudshell.shell.standards.autoload_generic_models import GenericPort
-from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
-
 from cloudshell.snmp.autoload.snmp.helper.snmp_if_entity import SnmpIfEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
 
@@ -33,10 +30,14 @@ class PortsTable:
 
     def __init__(
         self,
-        resource_model: NetworkingResourceModel,
+        resource_model,
         ports_snmp_table: SnmpPortsTable,
         logger: Logger,
     ):
+        """Init.
+
+        :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
+        """
         self._resource_model = resource_model
         self._if_table = {}
         self._if_entity = SnmpIfEntity
@@ -87,12 +88,13 @@ class PortsTable:
         return re.compile(port_channel_valid, re.IGNORECASE)
 
     @property
-    def ports_dict(self) -> Dict[str, GenericPort]:
+    def ports_dict(self):
         """Port index to Port object map.
 
         Port object is the one defined in the standard's resource_model.
         Usually, ifIndex is used by various vendors as a mapping key, between
         interface table and other tables. Including Physical structure table.
+        :rtype: dict[str, cloudshell.shell.standards.autoload_generic_models.GenericPort]  # noqa: E501
         """
         if not self._if_port_dict:
             self._get_if_entities()
