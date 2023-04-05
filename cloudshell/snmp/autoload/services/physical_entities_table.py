@@ -12,8 +12,6 @@ from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
 
 if TYPE_CHECKING:
-    from cloudshell.shell.standards.core.autoload.resource_model import AbstractResource
-
     PhysId = str
 
 
@@ -29,8 +27,7 @@ class PhysicalTable:
     ):
         """Init PhysicalTable.
 
-        :resource_model: Stands for the standard Resource Model,
-        i.e. NetworkingResourceModel for Networking standard.
+        :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
         """
         self.entity_table = entity_table
         self._logger = logger
@@ -66,20 +63,34 @@ class PhysicalTable:
         return self._port_list
 
     @property
-    def physical_power_ports_dict(self) -> dict[PhysId, AbstractResource]:
+    def physical_power_ports_dict(self):
+        """Power ports dict based on Entity-MIB.
+
+        :rtype: dict[PhysId,
+        cloudshell.shell.standards.autoload_generic_models.AbstractResource]
+        """
         self._thread.join()
         return self._power_port_dict
 
     @property
-    def physical_chassis_dict(self) -> dict[PhysId, AbstractResource]:
+    def physical_chassis_dict(self):
+        """Chassis dict based on Entity-MIB.
+
+        :rtype: dict[PhysId,
+        cloudshell.shell.standards.autoload_generic_models.AbstractResource]
+        """
         self._thread.join()
         if not self._chassis_dict:
             self._add_dummy_chassis("0")
         return self._chassis_dict
 
     @property
-    def physical_structure_table(self) -> dict[PhysId, AbstractResource]:
-        """Entities table based on Entity-MIB."""
+    def physical_structure_table(self):
+        """Entities table based on Entity-MIB.
+
+        :rtype: dict[PhysId,
+        cloudshell.shell.standards.autoload_generic_models.AbstractResource]
+        """
         self._thread.join()
         return self._physical_structure_table
 
