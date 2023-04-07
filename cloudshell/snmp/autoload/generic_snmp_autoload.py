@@ -6,13 +6,11 @@ from typing import TYPE_CHECKING
 
 from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.port_helper import PortHelper
+from cloudshell.snmp.autoload.helper.snmp_autoload_helper import log_autoload_details
 from cloudshell.snmp.autoload.services.physical_entities_table import PhysicalTable
 from cloudshell.snmp.autoload.services.port_mapping_table import PortMappingService
 from cloudshell.snmp.autoload.services.port_table import PortsTable
 from cloudshell.snmp.autoload.services.system_info_table import SnmpSystemInfo
-from cloudshell.snmp.autoload.snmp.helper.snmp_autoload_helper import (
-    log_autoload_details,
-)
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
 from cloudshell.snmp.autoload.snmp.tables.snmp_port_mapping_table import (
     SnmpPortMappingTable,
@@ -161,8 +159,7 @@ class GenericSNMPAutoload:
             parent = self.physical_table_service.physical_chassis_dict.get(
                 parent_object.index
             )
-            if parent:
-                parent.connect_power_port(power_port)
+            parent.connect_power_port(power_port)
 
     def _build_ports_structure(self) -> None:
         """Get ports data.

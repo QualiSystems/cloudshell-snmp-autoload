@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from cloudshell.snmp.autoload.helper.module_helper import ModuleHelper
-from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
+from cloudshell.snmp.autoload.snmp.entities.snmp_entity_base import BaseEntity
 
 if TYPE_CHECKING:
     from logging import Logger

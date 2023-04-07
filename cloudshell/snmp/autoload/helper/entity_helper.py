@@ -1,7 +1,7 @@
 from cloudshell.snmp.autoload.constants.entity_constants import (
     ENTITY_VENDOR_TYPE_TO_CLASS_MAP,
 )
-from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
+from cloudshell.snmp.autoload.snmp.entities.snmp_entity_base import BaseEntity
 
 
 class EntityHelper:

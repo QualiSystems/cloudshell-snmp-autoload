@@ -1,6 +1,6 @@
 import re
 
-from cloudshell.snmp.autoload.snmp.helper.snmpv2_data import SnmpV2MibData
+from cloudshell.snmp.autoload.snmp.snmpv2_data import SnmpV2MibData
 
 
 class SnmpSystemInfo:
