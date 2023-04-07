@@ -1,4 +1,9 @@
+import re
+
 from cloudshell.snmp.core.domain.snmp_oid import SnmpMibObject
+
+SPECIAL_SYMBOLS = re.escape(".-|_[]")
+CS_NOT_ALLOWED_STR_PATTERN = re.compile(rf"[^a-zA-Z\d\s{SPECIAL_SYMBOLS}]")
 
 PORT_INDEX = SnmpMibObject("IF-MIB", "ifIndex")
 PORT_DESCR_NAME = SnmpMibObject("IF-MIB", "ifDescr")

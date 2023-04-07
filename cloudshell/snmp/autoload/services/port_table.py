@@ -3,7 +3,8 @@ from functools import lru_cache
 from logging import Logger
 from typing import Dict
 
-from cloudshell.snmp.autoload.snmp.helper.snmp_if_entity import SnmpIfEntity
+from cloudshell.snmp.autoload.helper.port_name_helper import convert_port_name
+from cloudshell.snmp.autoload.snmp.entities.snmp_if_entity import SnmpIfEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
 
 
@@ -157,7 +158,7 @@ class PortsTable:
 
     def _add_port(self, port: SnmpIfEntity):
         port_object = self._resource_model.entities.Port(
-            index=port.if_index, name=port.port_name
+            index=port.if_index, name=convert_port_name(port.port_name)
         )
         port_object.mac_address = port.if_mac
         port_object.l2_protocol_type = port.if_type.replace("'", "")
@@ -188,7 +189,7 @@ class PortsTable:
 
     def _add_port_channel(self, port: SnmpIfEntity):
         port_channel_object = self._resource_model.entities.PortChannel(
-            index=port.port_id, name=port.port_name
+            index=port.port_id, name=convert_port_name(port.port_name)
         )
         associated_port_list = (
             self.ports_tables.port_channel_associated_ports.get_associated_ports(

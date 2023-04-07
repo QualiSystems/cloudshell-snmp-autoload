@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 
 from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
 from cloudshell.snmp.autoload.helper.entity_helper import EntityHelper
-from cloudshell.snmp.autoload.snmp.helper.snmp_entity_base import BaseEntity
+from cloudshell.snmp.autoload.helper.port_name_helper import convert_port_name
+from cloudshell.snmp.autoload.snmp.entities.snmp_entity_base import BaseEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
 
 if TYPE_CHECKING:
@@ -76,8 +77,7 @@ class PhysicalTable:
     def physical_chassis_dict(self):
         """Chassis dict based on Entity-MIB.
 
-        :rtype: dict[PhysId,
-        cloudshell.shell.standards.autoload_generic_models.AbstractResource]
+        :rtype: dict[PhysId, cloudshell.shell.standards.autoload_generic_models.AbstractResource]
         """
         self._thread.join()
         if not self._chassis_dict:
@@ -149,9 +149,8 @@ class PhysicalTable:
         name = self._pick_port_name(entity)
         if not name:
             return
-        port_object = self._resource_model.entities.Port(
-            index=entity.index, name=name.replace("/", "-")
-        )
+
+        port_object = self._resource_model.entities.Port(index=entity.index, name=name)
         parent_module = self.find_parent_module(entity.index)
 
         port_object.port_description = entity.description
@@ -166,21 +165,23 @@ class PhysicalTable:
         port_name = "Port"
         name_is_unique = True
         descr_is_unique = True
+        ent_name = convert_port_name(entity.name)
+        ent_desc = convert_port_name(entity.description)
         for k in self.entity_table.physical_structure_snmp_table:
             if k == entity.index:
                 continue
             v_entity = self.load_entity(k)
             if v_entity.entity_class == entity.entity_class:
-                if v_entity.name == entity.name:
+                if v_entity.name == ent_name:
                     name_is_unique = False
-                if v_entity.description == entity.description:
+                if v_entity.description == ent_desc:
                     descr_is_unique = False
             if not descr_is_unique and not name_is_unique:
                 break
         if name_is_unique:
-            port_name = entity.name
+            port_name = ent_name
         elif descr_is_unique:
-            port_name = entity.description
+            port_name = ent_desc
         return port_name
 
     def _add_power_port(self, entity):
