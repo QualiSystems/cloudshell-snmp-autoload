@@ -172,9 +172,9 @@ class PhysicalTable:
                 continue
             v_entity = self.load_entity(k)
             if v_entity.entity_class == entity.entity_class:
-                if v_entity.name == ent_name:
+                if convert_port_name(v_entity.name) == ent_name:
                     name_is_unique = False
-                if v_entity.description == ent_desc:
+                if convert_port_name(v_entity.description) == ent_desc:
                     descr_is_unique = False
             if not descr_is_unique and not name_is_unique:
                 break
