@@ -159,7 +159,8 @@ class GenericSNMPAutoload:
             parent = self.physical_table_service.physical_chassis_dict.get(
                 parent_object.index
             )
-            parent.connect_power_port(power_port)
+            if parent:
+                parent.connect_power_port(power_port)
 
     def _build_ports_structure(self) -> None:
         """Get ports data.
