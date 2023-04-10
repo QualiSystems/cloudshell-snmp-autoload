@@ -14,7 +14,6 @@ class PortParentValidator:
         parent_ids_list = parent_ids.split("/")
         if re.search(parent_ids, name, re.IGNORECASE):
             self._logger.debug(f"Port {name} parent modules ids are valid.")
-            return
         else:
             parent_ids_from_port_match = re.search(r"\d+(/\d+)*$", name, re.IGNORECASE)
             if parent_ids_from_port_match:
