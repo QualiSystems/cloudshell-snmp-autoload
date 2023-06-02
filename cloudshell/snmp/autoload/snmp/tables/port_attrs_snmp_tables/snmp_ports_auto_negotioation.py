@@ -1,6 +1,8 @@
 from logging import Logger
 from threading import Thread
 
+from pysnmp.proto.errind import RequestTimedOut
+
 from cloudshell.snmp.core.snmp_service import SnmpService
 
 from cloudshell.snmp.autoload.constants import port_constants
@@ -18,7 +20,12 @@ class PortAutoNegotiation(PortAttributesServiceInterface):
         self._snmp_auto_negotiation = {}
 
     def load_snmp_table(self):
-        self._snmp_auto_negotiation = self._snmp.get_table(port_constants.PORT_AUTO_NEG)
+        try:
+            table = self._snmp.get_table(port_constants.PORT_AUTO_NEG)
+        except RequestTimedOut:
+            self._logger.error(f"Failed to load {port_constants.PORT_AUTO_NEG} table")
+            table = {}
+        self._snmp_auto_negotiation = table
         if self._snmp_auto_negotiation:
             thread = Thread(
                 target=self._convert_auto_neg_table, name="Auto Negotiation converter"
