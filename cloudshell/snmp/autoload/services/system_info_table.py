@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 
 from cloudshell.snmp.autoload.snmp.snmpv2_data import SnmpV2MibData
@@ -99,12 +101,8 @@ class SnmpSystemInfo:
 
         return self._vendor
 
-    def _get_device_os_version(self):
-        """Get device OS Version form snmp SNMPv2 mib.
-
-        :return: device model
-        :rtype: str
-        """
+    def _get_device_os_version(self) -> str:
+        """Get device OS Version form snmp SNMPv2 mib."""
         result = ""
         matched = self._os_version_pattern.search(
             str(self._snmp_v2_obj.get_system_description())
