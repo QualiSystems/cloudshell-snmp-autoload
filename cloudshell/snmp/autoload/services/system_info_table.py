@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from cloudshell.snmp.core.domain.snmp_response import SnmpResponse
+
 from cloudshell.snmp.autoload.snmp.snmpv2_data import SnmpV2MibData
 
 
@@ -105,7 +107,7 @@ class SnmpSystemInfo:
         """Get device OS Version form snmp SNMPv2 mib."""
         result = ""
         matched = self._os_version_pattern.search(
-            str(self._snmp_v2_obj.get_system_description())
+            self._snmp_v2_obj.get_system_description()
         )
         if matched:
             result = matched.groupdict().get("os_version", "")
@@ -118,9 +120,9 @@ class SnmpSystemInfo:
         """
         self._logger.debug("Building Root started")
 
-        resource.contact_name = self._snmp_v2_obj.get_system_contact()
-        resource.system_name = self._snmp_v2_obj.get_system_name()
-        resource.location = self._snmp_v2_obj.get_system_location()
+        resource.contact_name = self._get_val(self._snmp_v2_obj.get_system_contact())
+        resource.system_name = self._get_val(self._snmp_v2_obj.get_system_name())
+        resource.location = self._get_val(self._snmp_v2_obj.get_system_location())
         resource.os_version = self._get_device_os_version()
         vendor = self._get_vendor()
         resource.vendor = vendor
@@ -131,3 +133,11 @@ class SnmpSystemInfo:
         resource.model_name = model.capitalize()
 
         self._logger.info("Building Root completed")
+
+    @staticmethod
+    def _get_val(resp: SnmpResponse | None) -> str:
+        if resp is None:
+            val = ""
+        else:
+            val = resp.safe_value
+        return val
