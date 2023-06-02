@@ -13,6 +13,11 @@ from cloudshell.snmp.autoload.snmp.entities.snmp_entity_base import BaseEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
 
 if TYPE_CHECKING:
+    from cloudshell.snmp.autoload.helper.types.resource_model import (
+        ResourceModelChassisProto,
+        ResourceModelProto,
+    )
+
     PhysId = str
 
 
@@ -25,13 +30,9 @@ class PhysicalTable:
         self,
         entity_table: SnmpEntityTable,
         logger: Logger,
-        resource_model,
+        resource_model: ResourceModelProto,
         entity_helper: EntityHelperAbc = EntityHelper(),
     ):
-        """Init PhysicalTable.
-
-        :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
-        """
         self.entity_table = entity_table
         self._logger = logger
         self._resource_model = resource_model
@@ -82,11 +83,8 @@ class PhysicalTable:
         return self._power_port_dict
 
     @property
-    def physical_chassis_dict(self):
-        """Chassis dict based on Entity-MIB.
-
-        :rtype: dict[PhysId, cloudshell.shell.standards.autoload_generic_models.AbstractResource]
-        """
+    def physical_chassis_dict(self) -> dict[PhysId, ResourceModelChassisProto]:
+        """Chassis dict based on Entity-MIB."""
         self._thread.join()
         if not self._chassis_dict:
             self._add_dummy_chassis(self.DUMMY_CHASSIS_ID)

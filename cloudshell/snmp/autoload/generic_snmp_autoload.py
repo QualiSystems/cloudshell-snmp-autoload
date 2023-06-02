@@ -22,13 +22,15 @@ if TYPE_CHECKING:
 
     from cloudshell.snmp.core.snmp_service import SnmpService
 
+    from cloudshell.snmp.autoload.helper.types.resource_model import ResourceModelProto
+
 
 class GenericSNMPAutoload:
     def __init__(
         self,
         snmp_handler: SnmpService,
         logger: Logger,
-        resource_model,
+        resource_model: ResourceModelProto,
     ):
         """Basic init with snmp handler and logger.
 
@@ -36,8 +38,6 @@ class GenericSNMPAutoload:
         :param logger: Logger
         :param resource_model: Represents Resource Model according to a standard
         :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
-
-        :return:
         """
         self.snmp_handler = snmp_handler
         self.logger = logger

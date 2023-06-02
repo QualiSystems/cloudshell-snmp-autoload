@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 from logging import Logger
 from threading import Thread
 
+from cloudshell.snmp.core.domain.snmp_oid import SnmpMibObject
+from cloudshell.snmp.core.domain.snmp_response import SnmpResponse
 from cloudshell.snmp.core.snmp_service import SnmpService
 
 from cloudshell.snmp.autoload.constants import port_constants
@@ -14,8 +18,8 @@ class PortDuplex(PortAttributesServiceInterface):
         super().__init__(snmp_service, logger)
         self._snmp = snmp_service
         self._logger = logger
-        self._duplex_table = {}
-        self._duplex_snmp_table = {}
+        self._duplex_table: dict[str, str] = {}
+        self._duplex_snmp_table: dict[str, dict[SnmpMibObject, SnmpResponse]] = {}
 
     def load_snmp_table(self):
         self._duplex_snmp_table = self._snmp.get_multiple_columns(
@@ -34,8 +38,8 @@ class PortDuplex(PortAttributesServiceInterface):
             port_duplex = duplex_data.get(port_constants.PORT_DUPLEX_DATA.object_name)
             self._duplex_table[port_index.safe_value] = "Half"
             if port_duplex and "full" in port_duplex.safe_value.lower():
-                self._duplex_table[port_index] = "Full"
+                self._duplex_table[port_index.safe_value] = "Full"
 
-    def get_duplex_by_port_index(self, port_index):
+    def get_duplex_by_port_index(self, port_index: str) -> str | None:
         [thread.join() for thread in self._thread_list]
         return self._duplex_table.get(port_index)
