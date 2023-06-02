@@ -13,7 +13,7 @@ from cloudshell.snmp.autoload.snmp.tables.port_attrs_snmp_tables.snmp_service_in
 
 class PortNeighbours(PortAttributesServiceInterface):
     ADJACENT_TEMPLATE = "{remote_host} through {remote_port}"
-    LLDP_INDEX_PATTERN = re.compile(r".\d+.")
+    LLDP_INDEX_PATTERN = re.compile(r"\.\d+\.")
     LLDP_LOC_INTERFACE_NAME = "interfacename"
     LLDP_LOC_NETWORK_ADDR = "networkaddress"
     LLDP_LOC_MAC_ADDR = "macaddress"
