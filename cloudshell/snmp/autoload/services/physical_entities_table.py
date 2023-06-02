@@ -7,7 +7,7 @@ from threading import Thread
 from typing import TYPE_CHECKING
 
 from cloudshell.snmp.autoload.exceptions.snmp_autoload_error import GeneralAutoloadError
-from cloudshell.snmp.autoload.helper.entity_helper import EntityHelper
+from cloudshell.snmp.autoload.helper.entity_helper import EntityHelper, EntityHelperAbc
 from cloudshell.snmp.autoload.helper.port_name_helper import convert_port_name
 from cloudshell.snmp.autoload.snmp.entities.snmp_entity_base import BaseEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_entity_table import SnmpEntityTable
@@ -25,6 +25,7 @@ class PhysicalTable:
         entity_table: SnmpEntityTable,
         logger: Logger,
         resource_model,
+        entity_helper: EntityHelperAbc = EntityHelper(),
     ):
         """Init PhysicalTable.
 
@@ -44,7 +45,7 @@ class PhysicalTable:
         self.port_parent_dict = {}
         self._modules_hierarchy_dict = defaultdict(list)
         self.chassis_ids_dict = {}
-        self.chassis_helper = EntityHelper()
+        self._chassis_helper = entity_helper
         self._snmp_physical_structure_table = (
             self.entity_table.physical_structure_snmp_table
         )
@@ -52,6 +53,12 @@ class PhysicalTable:
             name=self.__class__.__name__, target=self._get_entity_table
         )
         self._thread.start()
+
+    @property
+    def chassis_helper(self) -> EntityHelperAbc:
+        if not self._chassis_helper:
+            self._chassis_helper = EntityHelper()
+        return self._chassis_helper
 
     @property
     def module_exclude_pattern(self):
