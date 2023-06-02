@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from codecs import decode
 from collections import defaultdict
 from ipaddress import AddressValueError, IPv4Address, IPv6Address
 from logging import Logger
@@ -66,18 +67,27 @@ class PortIPTables(PortAttributesServiceInterface):
                 continue
             index = ip.index.replace("'", "")
             if index.startswith("ipv6"):
+                if index.startswith("ipv6z"):
+                    i = decode(index.replace("ipv6z.0x", ""), "hex").rstrip(b"\x00")
+                else:
+                    i = decode(index.replace("ipv6.0x", ""), "hex")
                 try:
-                    ipv6 = IPv6Address((index.replace("ipv6.0x", "")).decode("hex"))
-                    self._ipv6_table[port_index].append(ipv6)
+                    ipv6 = IPv6Address(i)
+                    self._ipv6_table[port_index].append(str(ipv6))
                 except AddressValueError:
-                    pass
+                    self._logger.warning(f"Cannot convert {i} to IPv6 address")
 
             elif index.startswith("ipv4"):
+                if index.startswith("ipv4z"):
+                    i = decode(index.replace("ipv4z.0x", ""), "hex").rstrip(b"\x00")
+                else:
+                    i = decode(index.replace("ipv4.0x", ""), "hex")
+
                 try:
-                    ipv4 = IPv4Address((index.replace("ipv4.0x", "")).decode("hex"))
-                    self._ipv4_table[port_index].append(ipv4)
+                    ipv4 = IPv4Address(i)
+                    self._ipv4_table[port_index].append(str(ipv4))
                 except AddressValueError:
-                    pass
+                    self._logger.warning(f"Cannot convert {i} to IPv4 address")
 
     def _convert_ipv6_table(self):
         for ipv6 in self._ipv6_snmp_table:
