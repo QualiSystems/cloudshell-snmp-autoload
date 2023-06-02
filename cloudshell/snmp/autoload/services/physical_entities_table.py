@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 class PhysicalTable:
     MODULE_EXCLUDE_LIST = ["fan", "cpu"]
     MODULE_TO_CONTAINER_LIST = []
+    DUMMY_CHASSIS_ID = "0"
 
     def __init__(
         self,
@@ -88,7 +89,7 @@ class PhysicalTable:
         """
         self._thread.join()
         if not self._chassis_dict:
-            self._add_dummy_chassis("0")
+            self._add_dummy_chassis(self.DUMMY_CHASSIS_ID)
         return self._chassis_dict
 
     @property
