@@ -108,3 +108,4 @@ venv.bak/
 /int_tests
 
 /tests/cloudshell/snmp/autoload/test_generic_snmp_autoload.py
+build_num.txt
