@@ -1,11 +1,20 @@
+from __future__ import annotations
+
 import re
 from functools import lru_cache
 from logging import Logger
-from typing import Dict
+from typing import TYPE_CHECKING
 
 from cloudshell.snmp.autoload.helper.port_name_helper import convert_port_name
 from cloudshell.snmp.autoload.snmp.entities.snmp_if_entity import SnmpIfEntity
 from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
+
+if TYPE_CHECKING:
+    from cloudshell.snmp.autoload.helper.types.resource_model import (
+        ResourceModelPortChanelProto,
+        ResourceModelPortProto,
+        ResourceModelProto,
+    )
 
 
 class PortsTable:
@@ -31,22 +40,18 @@ class PortsTable:
 
     def __init__(
         self,
-        resource_model,
+        resource_model: ResourceModelProto,
         ports_snmp_table: SnmpPortsTable,
         logger: Logger,
     ):
-        """Init.
-
-        :type resource_model: cloudshell.shell.standards.autoload_generic_models.GenericResourceModel  # noqa: E501
-        """
         self._resource_model = resource_model
         self._if_table = {}
         self._if_entity = SnmpIfEntity
         self._duplex_table = {}
         self._adjacent_table = {}
         self._auto_negotiation = {}
-        self._if_port_dict = {}
-        self._if_port_channels_dict = {}
+        self._if_port_dict: dict[str, ResourceModelPortProto] = {}
+        self._if_port_channels_dict: dict[str, ResourceModelPortChanelProto] = {}
         self.port_name_to_object_map = {}
         self._unmapped_ports_list = []
         self.ports_tables = ports_snmp_table
@@ -103,7 +108,7 @@ class PortsTable:
         return self._if_port_dict
 
     @property
-    def port_channels_dict(self) -> Dict[str, object]:
+    def port_channels_dict(self) -> dict[str, ResourceModelPortChanelProto]:
         """Port index to Port Channel object map.
 
         Port Channel object is the one defined in the standard's resource_model.
@@ -215,7 +220,7 @@ class PortsTable:
         snmp_port_data = self.load_if_port(if_index)
         return snmp_port_data.port_name
 
-    def is_wrong_port(self, port_name):
+    def is_wrong_port(self, port_name: str):
         return self.port_exclude_re.search(port_name.lower())
 
     def is_wrong_port_channel(self, port_name):

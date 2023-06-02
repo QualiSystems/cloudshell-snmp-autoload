@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from ipaddress import AddressValueError, IPv4Address, IPv6Address
 from logging import Logger
@@ -16,10 +18,10 @@ class PortIPTables(PortAttributesServiceInterface):
         super().__init__(snmp_service, logger)
         self._snmp = snmp_service
         self._logger = logger
-        self._ipv4_table = defaultdict(list)
+        self._ipv4_table: dict[str, list[str, ...]] = defaultdict(list)
         self._ipv4_snmp_table = {}
         self._ip_mixed_snmp_table = {}
-        self._ipv6_table = defaultdict(list)
+        self._ipv6_table: dict[str, list[str, ...]] = defaultdict(list)
         self._ipv6_snmp_table = {}
 
     def load_snmp_table(self):
@@ -96,13 +98,13 @@ class PortIPTables(PortAttributesServiceInterface):
             port_object.relative_address.native_index
         )
 
-    def get_all_ipv4_by_index(self, port_index):
+    def get_all_ipv4_by_index(self, port_index: str) -> str | None:
         [thread.join() for thread in self._thread_list]
         ip_addresses = self._ipv4_table.get(port_index)
         if ip_addresses:
             return ", ".join(ip_addresses)
 
-    def get_all_ipv6_by_index(self, port_index):
+    def get_all_ipv6_by_index(self, port_index: str) -> str | None:
         [thread.join() for thread in self._thread_list]
         ip_addresses = self._ipv6_table.get(port_index)
         if ip_addresses:
