@@ -1,3 +1,4 @@
+from copy import copy
 from unittest import TestCase
 from unittest.mock import Mock
 
@@ -14,8 +15,11 @@ from tests.cloudshell.snmp.autoload.data.physical_entities_data import (
 
 class TestPhysicalTable(TestCase):
     def setUp(self) -> None:
+        self._prepare_env()
+
+    def _prepare_env(self, data=MOCK_SNMP_RESPONSE):
         logger = Mock()
-        entity_table = self._create_entity_table(logger)
+        entity_table = self._create_entity_table(data, logger)
         resource_model = NetworkingResourceModel(
             "Resource Name", "Shell Name", "CS_Switch", Mock()
         )
@@ -28,10 +32,10 @@ class TestPhysicalTable(TestCase):
             r"cevFan|cevCpu|cevSensor|cevContainerDaughterCard"
         ]
 
-    def _create_entity_table(self, logger):
+    def _create_entity_table(self, data, logger):
         snmp = Mock()
         response = QualiMibTable("test")
-        response.update(MOCK_SNMP_RESPONSE)
+        response.update(data)
         snmp.get_multiple_columns.return_value = response
 
         return SnmpEntityTable(snmp, logger)
@@ -67,3 +71,25 @@ class TestPhysicalTable(TestCase):
         assert len(self.table._chassis_dict) == 1
         assert len(self.table.physical_chassis_dict) == 1
         assert len(self.table.physical_power_ports_dict) == 1
+
+    def test_add_chassis_with_parent_chassis(self):
+        response = copy(MOCK_SNMP_RESPONSE)
+        response["0"] = {
+            "entPhysicalParentRelPos": Mock(safe_value="-1"),
+            "entPhysicalDescr": Mock(
+                safe_value="Cisco 2500 Series Wireless LAN Controller"
+            ),
+            "entPhysicalName": Mock(safe_value="Chassis"),
+            "entPhysicalContainedIn": Mock(safe_value="4015"),
+            "entPhysicalClass": Mock(safe_value=""),
+            "entPhysicalVendorType": Mock(safe_value=""),
+            "entPhysicalModelName": Mock(safe_value="AIR-CT2504-K9"),
+            "entPhysicalSerialNum": Mock(safe_value="PSZ19201CDR"),
+            "entPhysicalSoftwareRev": Mock(safe_value="8.2.100.0"),
+            "entPhysicalHardwareRev": Mock(safe_value=""),
+        }
+        response["1"]["entPhysicalContainedIn"] = "0"
+        self._prepare_env(response)
+
+        result = self.table.physical_structure_table
+        assert result is not None

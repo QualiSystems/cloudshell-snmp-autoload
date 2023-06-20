@@ -26,7 +26,7 @@ class EntityHelper(EntityHelperAbc):
                     return "chassis"
                 return ""
             for key, value in ENTITY_VENDOR_TYPE_TO_CLASS_MAP.items():
-                if key.search(entity.vendor_type):
+                if key.search(entity.vendor_type_label):
                     entity_class = value
 
         return entity_class

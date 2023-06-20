@@ -1,3 +1,5 @@
+from functools import cached_property
+
 from cloudshell.snmp.autoload.constants.entity_constants import (
     ENTITY_CLASS,
     ENTITY_DESCRIPTION,
@@ -63,6 +65,15 @@ class BaseEntity:
     def vendor_type(self):
         result = self.entity_row_response.get(ENTITY_VENDOR_TYPE.object_name)
         return result.safe_value if result else ""
+
+    @cached_property
+    def vendor_type_label(self):
+        snmp_response = self.entity_row_response.get(ENTITY_VENDOR_TYPE.object_name)
+        result = snmp_response.safe_value if snmp_response else ""
+        try:
+            result = snmp_response.object_type[1].getLabel()[-1]
+        finally:
+            return result
 
     @property
     def model(self):
