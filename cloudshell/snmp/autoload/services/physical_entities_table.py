@@ -125,13 +125,16 @@ class PhysicalTable:
             self._add_port(entity)
         elif "powersupply" in entity_class.lower():
             self._add_power_port(entity)
-        elif "chassis" in entity_class.lower() and not self._has_parent_chassis(entity):
+        elif "chassis" in entity_class.lower():
+            # ToDo check how this works with stack parents: elif "chassis" in
+            #  entity_class.lower() and not
+            #  self._has_parent_chassis(entity):
             self._add_chassis(entity)
 
     def _has_parent_chassis(self, entity: BaseEntity) -> bool:
         if self.entity_table.physical_structure_snmp_table.get(entity.parent_id):
             parent = self.load_entity(entity.parent_id)
-            entity_class = self.chassis_helper.get_physical_class(entity)
+            entity_class = self.chassis_helper.get_physical_class(entity.parent_id)
             if "chassis" in entity_class.lower():
                 res = True
             else:

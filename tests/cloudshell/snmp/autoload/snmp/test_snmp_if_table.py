@@ -4,10 +4,10 @@ import pytest
 
 from cloudshell.shell.standards.networking.autoload_model import NetworkingResourceModel
 
+from .port_snmp_data import PORT_SNMP_DATA
+
 from cloudshell.snmp.autoload.services.port_table import PortsTable
 from cloudshell.snmp.autoload.snmp.tables.snmp_ports_table import SnmpPortsTable
-
-from tests.cloudshell.snmp.port_snmp_data import PORT_SNMP_DATA
 
 API = Mock(
     DecryptPassword=lambda x: Mock(Value=x),
