@@ -7,7 +7,7 @@ MOCK_BAD_CHASSIS_SNMP_RESPONSE = {
             safe_value="Cisco 2500 Series Wireless LAN Controller"
         ),
         "entPhysicalName": Mock(safe_value="Chassis"),
-        "entPhysicalContainedIn": Mock(safe_value="4015"),
+        "entPhysicalContainedIn": Mock(safe_value="-1"),
         "entPhysicalClass": Mock(safe_value=""),
         "entPhysicalVendorType": Mock(safe_value=""),
         "entPhysicalModelName": Mock(safe_value="AIR-CT2504-K9"),
