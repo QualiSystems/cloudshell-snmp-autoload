@@ -134,7 +134,7 @@ class PhysicalTable:
     def _has_parent_chassis(self, entity: BaseEntity) -> bool:
         if self.entity_table.physical_structure_snmp_table.get(entity.parent_id):
             parent = self.load_entity(entity.parent_id)
-            entity_class = self.chassis_helper.get_physical_class(entity.parent_id)
+            entity_class = self.chassis_helper.get_physical_class(parent)
             if "chassis" in entity_class.lower():
                 res = True
             else:
