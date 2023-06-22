@@ -2,6 +2,8 @@ from unittest.mock import Mock, create_autospec
 
 from cloudshell.snmp.autoload.constants.entity_constants import (
     CHASSIS_MATCH_PATTERN,
+    ENTITY_CLASS,
+    ENTITY_VENDOR_TYPE,
     ENTITY_VENDOR_TYPE_TO_CLASS_MAP,
 )
 from cloudshell.snmp.autoload.helper.entity_helper import EntityHelper
@@ -63,10 +65,17 @@ class TestEntityHelper:
 
     def test_get_physical_class_entity_class_not_defined(self):
         # Arrange
-        entity = create_autospec(BaseEntity)
-        entity.entity_class = ""
         expected_result = "chassis"
-        entity.vendor_type = f"UnknownDevice{expected_result.title()}"
+        entity = BaseEntity(
+            "1",
+            {
+                ENTITY_VENDOR_TYPE.object_name: Mock(
+                    safe_value=f"UnknownDevice{expected_result.title()}"
+                ),
+                ENTITY_CLASS.object_name: Mock(safe_value=""),
+            },
+        )
+        expected_result = "chassis"
 
         # Act
         result = EntityHelper().get_physical_class(entity)
@@ -77,9 +86,15 @@ class TestEntityHelper:
     def test_get_physical_class_entity_class_is_other(self):
         # Arrange
         expected_result = "module"
-        entity = create_autospec(BaseEntity)
-        entity.entity_class = "other"
-        entity.vendor_type = f"UnknownDevice{expected_result.title()}"
+        entity = BaseEntity(
+            "1",
+            {
+                ENTITY_VENDOR_TYPE.object_name: Mock(
+                    safe_value=f"UnknownDevice{expected_result.title()}"
+                ),
+                ENTITY_CLASS.object_name: Mock(safe_value="other"),
+            },
+        )
 
         # Act
         result = EntityHelper().get_physical_class(entity)
@@ -92,19 +107,29 @@ class TestEntityHelper:
     ):
         # Arrange
         expected_result = ""
-        entity = create_autospec(BaseEntity)
-        entity.entity_class = ""
-        entity.vendor_type = f"UnknownDevice{expected_result.title()}"
+        entity = BaseEntity(
+            "1",
+            {
+                ENTITY_VENDOR_TYPE.object_name: Mock(safe_value="UnknownDevice"),
+                ENTITY_CLASS.object_name: Mock(safe_value=""),
+            },
+        )
 
         # Act
         result = EntityHelper().get_physical_class(entity)
 
         # Assert
-        assert result == entity.entity_class
+        assert result == expected_result
 
     def test_get_physical_class_entity_vendor_type_matches_known_physical_class(self):
         # Arrange
-        entity = Mock(spec=BaseEntity, vendor_type="cevChassis", entity_class="")
+        entity = BaseEntity(
+            "1",
+            {
+                ENTITY_VENDOR_TYPE.object_name: Mock(safe_value="cevChassis"),
+                ENTITY_CLASS.object_name: Mock(safe_value=""),
+            },
+        )
 
         # Act
         result = EntityHelper().get_physical_class(entity)
@@ -128,7 +153,13 @@ class TestEntityHelper:
         self,
     ):
         # Arrange
-        entity = Mock(spec=BaseEntity, vendor_type="cevUnknown", entity_class="")
+        entity = BaseEntity(
+            "1",
+            {
+                ENTITY_VENDOR_TYPE.object_name: Mock(safe_value="cevUnknown"),
+                ENTITY_CLASS.object_name: Mock(safe_value=""),
+            },
+        )
 
         # Act
         result = EntityHelper().get_physical_class(entity)
