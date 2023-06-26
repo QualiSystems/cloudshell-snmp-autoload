@@ -4,7 +4,7 @@ from codecs import decode
 from collections import defaultdict
 from ipaddress import AddressValueError, IPv4Address, IPv6Address
 from logging import Logger
-from threading import Thread
+from threading import Lock, Thread
 
 from cloudshell.snmp.core.snmp_service import SnmpService
 
@@ -20,9 +20,11 @@ class PortIPTables(PortAttributesServiceInterface):
         self._snmp = snmp_service
         self._logger = logger
         self._ipv4_table: dict[str, list[str, ...]] = defaultdict(list)
+        self._ip_v4_lock = Lock()
         self._ipv4_snmp_table = {}
         self._ip_mixed_snmp_table = {}
         self._ipv6_table: dict[str, list[str, ...]] = defaultdict(list)
+        self._ip_v6_lock = Lock()
         self._ipv6_snmp_table = {}
 
     def load_snmp_table(self):
@@ -58,7 +60,9 @@ class PortIPTables(PortAttributesServiceInterface):
         for ip in self._ipv4_snmp_table:
             port_index = ip.safe_value
             if port_index:
-                self._ipv4_table[port_index].append(ip.index)
+                with self._ip_v4_lock:
+                    if ip.index not in self._ipv4_table[port_index]:
+                        self._ipv4_table[port_index].append(ip.index)
 
     def _convert_ip_mixed_table(self):
         for ip in self._ip_mixed_snmp_table:
@@ -73,7 +77,9 @@ class PortIPTables(PortAttributesServiceInterface):
                     i = decode(index.replace("ipv6.0x", ""), "hex")
                 try:
                     ipv6 = IPv6Address(i)
-                    self._ipv6_table[port_index].append(str(ipv6))
+                    with self._ip_v6_lock:
+                        if str(ipv6) not in self._ipv6_table[port_index]:
+                            self._ipv6_table[port_index].append(str(ipv6))
                 except AddressValueError:
                     self._logger.warning(f"Cannot convert {i} to IPv6 address")
 
@@ -85,7 +91,9 @@ class PortIPTables(PortAttributesServiceInterface):
 
                 try:
                     ipv4 = IPv4Address(i)
-                    self._ipv4_table[port_index].append(str(ipv4))
+                    with self._ip_v4_lock:
+                        if str(ipv4) not in self._ipv4_table[port_index]:
+                            self._ipv4_table[port_index].append(str(ipv4))
                 except AddressValueError:
                     self._logger.warning(f"Cannot convert {i} to IPv4 address")
 
@@ -97,8 +105,12 @@ class PortIPTables(PortAttributesServiceInterface):
                 index_location = ipv6.index.find(".")
                 port_index = ipv6.index[:index_location]
                 ipv6_address = ipv6.index.replace(f"{port_index}.", "")
-                if ipv6_address:
-                    self._ipv6_table[port_index].append(ipv6_address)
+                with self._ip_v6_lock:
+                    if (
+                        ipv6_address
+                        and ipv6_address not in self._ipv6_table[port_index]
+                    ):
+                        self._ipv6_table[port_index].append(ipv6_address)
 
     def set_port_attributes(self, port_object):
         port_object.ipv4_address = self.get_all_ipv4_by_index(
